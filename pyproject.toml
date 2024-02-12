@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "langchain-document-pipeline"
+version = "0.1.0"
+description = "RAG pipeline for medical document processing with LangChain + Claude + pgvector"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Ivan Podgurskiy", email = "ivan.podgurskiy@gmail.com"},
+]
+
+dependencies = [
+    "langchain==0.1.6",
+    "langchain-anthropic==0.1.1",
+    "langchain-community==0.0.29",
+    "anthropic>=0.18.0",
+    "pgvector==0.2.5",
+    "asyncpg>=0.29.0",
+    "sqlalchemy>=2.0.0",
+    "pymupdf>=1.23.0",
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=1.10.0,<2.0.0",
+    "pydantic-settings>=2.0.0",
+    "python-multipart>=0.0.9",
+    "httpx>=0.26.0",
+    "python-dotenv>=1.0.0",
+    "tqdm>=4.66.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+    "httpx>=0.26.0",
+]
+eval = [
+    "ragas>=0.1.0",
+    "datasets>=2.16.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+strict = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
