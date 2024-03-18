@@ -77,12 +77,19 @@ def build_splitter(chunk_size: int = 1000, chunk_overlap: int = 200) -> Recursiv
     )
 
 
+MIN_PAGE_CHARS = 10  # Pages with fewer chars are treated as blank/scanned images
+
+
 def split_document(
     doc: DocumentContent,
     chunk_size: int = 1000,
     chunk_overlap: int = 200,
 ) -> list[TextChunk]:
     """Split all pages of a document into text chunks.
+
+    Skips pages with fewer than MIN_PAGE_CHARS characters — these are typically
+    scanned image pages that contain no extractable text and would produce
+    empty or near-empty chunks that degrade retrieval quality.
 
     Args:
         doc: Loaded document content.
@@ -97,6 +104,8 @@ def split_document(
     chunk_index = 0
 
     for page in doc.pages:
+        if page.char_count < MIN_PAGE_CHARS:
+            continue  # skip blank / scanned image pages
         page_chunks = split_page(page, splitter, chunk_index)
         all_chunks.extend(page_chunks)
         chunk_index += len(page_chunks)
