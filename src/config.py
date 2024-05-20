@@ -20,8 +20,10 @@ class Settings(BaseSettings):
     llm_temperature: float = 0.0
 
     # Embeddings
+    # voyage-large-2 produces 1536-dim vectors; voyage-2 produces 1024-dim.
+    # Always keep embedding_model and embedding_dimensions in sync.
     embedding_model: str = "voyage-large-2"
-    embedding_dimensions: int = 1536
+    embedding_dimensions: int = 1536  # must match voyage-large-2 output dims
 
     # Vector store
     vector_similarity_threshold: float = 0.75
