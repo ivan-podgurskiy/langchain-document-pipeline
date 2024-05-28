@@ -1,12 +1,20 @@
 -- Enable pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
 
+-- Ingestion status enum
+DO $$ BEGIN
+    CREATE TYPE ingestion_status AS ENUM ('pending', 'processing', 'done', 'failed');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
 -- Documents table: tracks ingested PDF files
 CREATE TABLE IF NOT EXISTS documents (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     filename    TEXT NOT NULL,
     file_hash   TEXT NOT NULL UNIQUE,
     page_count  INTEGER NOT NULL DEFAULT 0,
+    status      ingestion_status NOT NULL DEFAULT 'pending',
+    error_msg   TEXT,
     metadata    JSONB NOT NULL DEFAULT '{}',
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()

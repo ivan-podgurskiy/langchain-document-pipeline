@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy.sql import func
@@ -26,6 +26,12 @@ class Document(Base):
     filename: str = Column(String(512), nullable=False)
     file_hash: str = Column(String(64), nullable=False, unique=True)
     page_count: int = Column(Integer, nullable=False, default=0)
+    status: str = Column(
+        Enum("pending", "processing", "done", "failed", name="ingestion_status"),
+        nullable=False,
+        default="pending",
+    )
+    error_msg: str | None = Column(Text, nullable=True)
     metadata_: dict = Column("metadata", JSONB, nullable=False, default=dict)
     created_at: datetime = Column(DateTime(timezone=True), server_default=func.now())
     updated_at: datetime = Column(
