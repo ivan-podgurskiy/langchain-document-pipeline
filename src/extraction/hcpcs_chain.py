@@ -107,17 +107,52 @@ def _build_prompt_messages() -> list[tuple[str, str]]:
     return messages
 
 
-def extract_hcpcs_codes(document_text: str, llm: ChatAnthropic | None = None) -> dict[str, Any]:
-    """Extract HCPCS codes from clinical documentation with few-shot prompting.
+MAX_CONTEXT_CHARS = 12_000  # Approx 3k tokens; safe for Claude 3 Sonnet context
+
+
+def concat_pages(pages: list[str]) -> str:
+    """Concatenate page texts into a single string for extraction.
+
+    Joins pages with a clear separator so the model sees the full
+    multi-page procedure note as a single coherent document.
 
     Args:
-        document_text: Raw clinical text (procedure note, order, etc.).
+        pages: List of per-page text strings.
+
+    Returns:
+        Concatenated document text with page markers.
+    """
+    parts = []
+    for i, page_text in enumerate(pages, start=1):
+        parts.append(f"[PAGE {i}]\n{page_text.strip()}")
+    return "\n\n".join(parts)
+
+
+def extract_hcpcs_codes(
+    document_text: str | list[str],
+    llm: ChatAnthropic | None = None,
+) -> dict[str, Any]:
+    """Extract HCPCS codes from clinical documentation with few-shot prompting.
+
+    Accepts either a single text string or a list of per-page strings.
+    When a list is provided, pages are concatenated before extraction
+    so that codes spanning multiple pages are not missed.
+
+    Args:
+        document_text: Raw clinical text or list of page texts.
         llm: Optional pre-built LLM; created fresh if None.
 
     Returns:
         Dict with "hcpcs_codes" list. Each entry has code, description,
         quantity (nullable), and source_text fields.
     """
+    if isinstance(document_text, list):
+        document_text = concat_pages(document_text)
+
+    # Truncate to avoid exceeding context limits
+    if len(document_text) > MAX_CONTEXT_CHARS:
+        document_text = document_text[:MAX_CONTEXT_CHARS] + "\n[... truncated ...]"
+
     if llm is None:
         llm = build_hcpcs_chain()
 
