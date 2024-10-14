@@ -1,11 +1,12 @@
-"""Pydantic models for structured medical document entities."""
+"""Pydantic v2 models for structured medical document entities."""
 
 from __future__ import annotations
 
+import re
 from datetime import date
 from typing import Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class HCPCSCode(BaseModel):
@@ -16,10 +17,10 @@ class HCPCSCode(BaseModel):
     quantity: Optional[float] = Field(None, description="Quantity ordered/prescribed")
     source_text: Optional[str] = Field(None, description="Verbatim text where code appeared")
 
-    @validator("code")
+    @field_validator("code")
+    @classmethod
     def validate_hcpcs_format(cls, v: str) -> str:
         """Ensure the code matches HCPCS format: one letter + four digits."""
-        import re
         v = v.strip().upper()
         if not re.match(r"^[A-Z]\d{4}$", v):
             raise ValueError(f"Invalid HCPCS code format: {v!r}")
@@ -33,9 +34,10 @@ class ICD10Code(BaseModel):
     description: str = Field(..., description="Diagnosis description")
     primary: bool = Field(False, description="Whether this is the primary diagnosis")
 
-    @validator("code")
+    @field_validator("code")
+    @classmethod
     def normalize_icd10(cls, v: str) -> str:
-        """Normalize ICD-10 code to uppercase with period."""
+        """Normalize ICD-10 code to uppercase."""
         return v.strip().upper()
 
 
