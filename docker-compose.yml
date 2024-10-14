@@ -2,7 +2,9 @@ version: "3.9"
 
 services:
   postgres:
-    image: ankane/pgvector:v0.7.2-pg16
+    # PG 17.0 (Sep 2024) + pgvector 0.8.0 (Oct 2024)
+    # PG 17 brings improved VACUUM performance and logical replication enhancements
+    image: pgvector/pgvector:0.8.0-pg17
     container_name: langchain_pipeline_db
     environment:
       POSTGRES_USER: postgres
