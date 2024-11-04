@@ -11,20 +11,27 @@ from typing import Any
 
 @dataclass
 class TokenUsageRecord:
-    """A single recorded LLM call with token counts."""
+    """A single recorded LLM call with token counts.
+
+    Prompt caching tokens are tracked separately because they are billed
+    at a different rate: cache_write at a 20% premium, cache_read at an 88% discount.
+    Mixing them with standard input_tokens produces incorrect cost estimates.
+    """
 
     record_id: uuid.UUID
     model: str
     chain_name: str
     document_id: str | None
-    input_tokens: int
-    output_tokens: int
+    input_tokens: int          # standard (non-cached) prompt tokens
+    output_tokens: int         # completion tokens
+    cache_write_tokens: int = 0   # tokens written to the prompt cache this call
+    cache_read_tokens: int = 0    # tokens served from the prompt cache this call
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
     @property
     def total_tokens(self) -> int:
-        """Total tokens for this call."""
-        return self.input_tokens + self.output_tokens
+        """Total tokens for this call (all categories combined)."""
+        return self.input_tokens + self.output_tokens + self.cache_write_tokens + self.cache_read_tokens
 
 
 class UsageTracker:
@@ -43,6 +50,8 @@ class UsageTracker:
         chain_name: str,
         input_tokens: int,
         output_tokens: int,
+        cache_write_tokens: int = 0,
+        cache_read_tokens: int = 0,
         document_id: str | None = None,
     ) -> TokenUsageRecord:
         """Record token usage for an LLM call.
@@ -50,8 +59,10 @@ class UsageTracker:
         Args:
             model: Claude model identifier (e.g. 'claude-3-sonnet-20240229').
             chain_name: Name of the chain (e.g. 'hcpcs_extraction', 'qa_chain').
-            input_tokens: Number of input/prompt tokens consumed.
-            output_tokens: Number of output/completion tokens generated.
+            input_tokens: Standard (non-cached) input/prompt tokens consumed.
+            output_tokens: Output/completion tokens generated.
+            cache_write_tokens: Tokens written to the prompt cache (billed at premium rate).
+            cache_read_tokens: Tokens read from the prompt cache (billed at discount rate).
             document_id: Optional UUID string of the associated document.
 
         Returns:
@@ -64,6 +75,8 @@ class UsageTracker:
             document_id=document_id,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
+            cache_write_tokens=cache_write_tokens,
+            cache_read_tokens=cache_read_tokens,
         )
         self._records.append(record)
         return record
