@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     chunk_overlap: int = 200
     max_upload_size_mb: int = 50
 
+    # LangSmith tracing
+    langchain_tracing_v2: bool = False
+    langchain_api_key: str = ""
+    langchain_project: str = "langchain-document-pipeline"
+
     # App
     app_host: str = "0.0.0.0"
     app_port: int = 8000

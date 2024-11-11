@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
+import os
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config import settings
 from src.db.connection import close_pool, get_pool
+
+# Configure LangSmith tracing if enabled
+if settings.langchain_tracing_v2 and settings.langchain_api_key:
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    os.environ["LANGCHAIN_API_KEY"] = settings.langchain_api_key
+    os.environ["LANGCHAIN_PROJECT"] = settings.langchain_project
 
 app = FastAPI(
     title="LangChain Document Pipeline",
