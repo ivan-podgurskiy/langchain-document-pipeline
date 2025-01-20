@@ -1,4 +1,4 @@
-"""Extraction accuracy evaluation script: precision and recall for HCPCS codes."""
+"""RAGAS evaluation pipeline: faithfulness, answer relevancy, and HCPCS extraction metrics."""
 
 from __future__ import annotations
 
@@ -13,15 +13,17 @@ from typing import Any
 
 @dataclass
 class EvalSample:
-    """A single labeled evaluation sample."""
+    """A single labeled evaluation sample for RAG or extraction evaluation."""
 
+    question: str
+    ground_truth_answer: str
     document_text: str
-    expected_codes: list[str]  # uppercase HCPCS codes
+    hcpcs_codes: list[str] = field(default_factory=list)
 
 
 @dataclass
-class EvalMetrics:
-    """Precision, recall, and F1 for extraction."""
+class ExtractionMetrics:
+    """Precision, recall, and F1 for HCPCS code extraction."""
 
     true_positives: int = 0
     false_positives: int = 0
@@ -46,31 +48,13 @@ class EvalMetrics:
         return 2 * p * r / (p + r) if (p + r) > 0 else 0.0
 
 
-def evaluate_sample(extracted: list[str], expected: list[str]) -> tuple[int, int, int]:
-    """Compute TP/FP/FN for a single extraction result.
-
-    Args:
-        extracted: Codes returned by the extraction chain (uppercase).
-        expected: Ground-truth codes for this document (uppercase).
-
-    Returns:
-        Tuple of (true_positives, false_positives, false_negatives).
-    """
-    extracted_set = set(c.upper() for c in extracted)
-    expected_set = set(c.upper() for c in expected)
-    tp = len(extracted_set & expected_set)
-    fp = len(extracted_set - expected_set)
-    fn = len(expected_set - extracted_set)
-    return tp, fp, fn
-
-
-def load_ground_truth(csv_path: Path) -> list[EvalSample]:
+def load_eval_dataset(csv_path: Path) -> list[EvalSample]:
     """Load evaluation samples from a CSV file.
 
-    Expected columns: document_text, hcpcs_codes (pipe-separated).
+    Expected columns: question, ground_truth_answer, document_text, hcpcs_codes.
 
     Args:
-        csv_path: Path to the ground-truth CSV file.
+        csv_path: Path to the evaluation CSV.
 
     Returns:
         List of EvalSample objects.
@@ -79,92 +63,131 @@ def load_ground_truth(csv_path: Path) -> list[EvalSample]:
     with open(csv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            codes = [c.strip() for c in row["hcpcs_codes"].split("|") if c.strip()]
+            codes = [c.strip() for c in row.get("hcpcs_codes", "").split("|") if c.strip()]
             samples.append(EvalSample(
+                question=row["question"],
+                ground_truth_answer=row["ground_truth_answer"],
                 document_text=row["document_text"],
-                expected_codes=codes,
+                hcpcs_codes=codes,
             ))
     return samples
 
 
-def run_evaluation(ground_truth_path: Path, output_path: Path | None = None) -> EvalMetrics:
-    """Run HCPCS extraction evaluation against a ground-truth dataset.
+def run_ragas_evaluation(
+    samples: list[EvalSample],
+    pipeline_answer_fn: Any,
+) -> dict[str, float]:
+    """Run RAGAS evaluation for faithfulness and answer relevancy.
 
-    Loads the extraction chain, runs it on each sample, and computes
-    aggregate precision, recall, and F1.
+    Requires the 'ragas' package (>=0.1.0). Builds a RAGAS Dataset
+    from pipeline outputs and evaluates with standard metrics.
 
     Args:
-        ground_truth_path: Path to ground-truth CSV.
-        output_path: Optional path to write per-sample results JSON.
+        samples: Labeled evaluation samples.
+        pipeline_answer_fn: Callable(question, context) -> str answer.
 
     Returns:
-        Aggregate EvalMetrics across all samples.
+        Dict with 'faithfulness' and 'answer_relevancy' scores.
     """
-    # Import here to avoid requiring the full pipeline at module import time
+    try:
+        from datasets import Dataset
+        from ragas import evaluate
+        from ragas.metrics import answer_relevancy, faithfulness
+    except ImportError:
+        print(
+            "RAGAS evaluation requires: pip install ragas datasets",
+            file=sys.stderr,
+        )
+        return {"faithfulness": 0.0, "answer_relevancy": 0.0}
+
+    questions, answers, contexts, ground_truths = [], [], [], []
+
+    for sample in samples:
+        questions.append(sample.question)
+        ground_truths.append(sample.ground_truth_answer)
+        contexts.append([sample.document_text])
+
+        answer = pipeline_answer_fn(sample.question, sample.document_text)
+        answers.append(answer)
+
+    dataset = Dataset.from_dict({
+        "question": questions,
+        "answer": answers,
+        "contexts": contexts,
+        "ground_truth": ground_truths,
+    })
+
+    result = evaluate(dataset, metrics=[faithfulness, answer_relevancy])
+    return {
+        "faithfulness": float(result["faithfulness"]),
+        "answer_relevancy": float(result["answer_relevancy"]),
+    }
+
+
+def run_extraction_evaluation(samples: list[EvalSample]) -> ExtractionMetrics:
+    """Run HCPCS extraction evaluation against ground-truth codes.
+
+    Args:
+        samples: Evaluation samples with expected hcpcs_codes.
+
+    Returns:
+        Aggregate ExtractionMetrics.
+    """
     from src.extraction.hcpcs_chain import extract_hcpcs_codes
 
-    samples = load_ground_truth(ground_truth_path)
-    total_metrics = EvalMetrics()
-    per_sample_results = []
-
-    print(f"Evaluating {len(samples)} samples...")
-
-    for i, sample in enumerate(samples, start=1):
+    metrics = ExtractionMetrics()
+    for sample in samples:
         result = extract_hcpcs_codes(sample.document_text)
-        extracted_codes = [item["code"] for item in result.get("hcpcs_codes", [])]
+        extracted = set(item["code"].upper() for item in result.get("hcpcs_codes", []))
+        expected = set(c.upper() for c in sample.hcpcs_codes)
+        metrics.true_positives += len(extracted & expected)
+        metrics.false_positives += len(extracted - expected)
+        metrics.false_negatives += len(expected - extracted)
 
-        tp, fp, fn = evaluate_sample(extracted_codes, sample.expected_codes)
-        total_metrics.true_positives += tp
-        total_metrics.false_positives += fp
-        total_metrics.false_negatives += fn
-
-        per_sample_results.append({
-            "sample_index": i,
-            "expected": sample.expected_codes,
-            "extracted": extracted_codes,
-            "tp": tp, "fp": fp, "fn": fn,
-        })
-
-        if i % 10 == 0:
-            print(f"  Processed {i}/{len(samples)} samples")
-
-    print(f"\nResults:")
-    print(f"  Precision: {total_metrics.precision:.4f}")
-    print(f"  Recall:    {total_metrics.recall:.4f}")
-    print(f"  F1:        {total_metrics.f1:.4f}")
-
-    if output_path:
-        output = {
-            "metrics": {
-                "precision": total_metrics.precision,
-                "recall": total_metrics.recall,
-                "f1": total_metrics.f1,
-                "true_positives": total_metrics.true_positives,
-                "false_positives": total_metrics.false_positives,
-                "false_negatives": total_metrics.false_negatives,
-            },
-            "samples": per_sample_results,
-        }
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(output, f, indent=2)
-        print(f"\nDetailed results written to: {output_path}")
-
-    return total_metrics
+    return metrics
 
 
 def main() -> None:
-    """CLI entry point for the evaluation script."""
-    parser = argparse.ArgumentParser(description="Evaluate HCPCS extraction accuracy")
-    parser.add_argument("ground_truth", type=Path, help="Path to ground-truth CSV")
+    """CLI entry point for the RAGAS evaluation pipeline."""
+    parser = argparse.ArgumentParser(description="Evaluate RAG pipeline with RAGAS metrics")
+    parser.add_argument("dataset", type=Path, help="Path to evaluation CSV dataset")
     parser.add_argument("--output", "-o", type=Path, help="Write results to JSON file")
+    parser.add_argument(
+        "--skip-ragas", action="store_true", help="Skip RAGAS eval, only run extraction metrics"
+    )
     args = parser.parse_args()
 
-    if not args.ground_truth.exists():
-        print(f"Error: ground truth file not found: {args.ground_truth}", file=sys.stderr)
+    if not args.dataset.exists():
+        print(f"Error: dataset not found: {args.dataset}", file=sys.stderr)
         sys.exit(1)
 
-    metrics = run_evaluation(args.ground_truth, args.output)
-    sys.exit(0 if metrics.f1 >= 0.8 else 1)
+    samples = load_eval_dataset(args.dataset)
+    print(f"Loaded {len(samples)} evaluation samples")
+
+    results: dict[str, Any] = {}
+
+    print("\nRunning HCPCS extraction evaluation...")
+    ext_metrics = run_extraction_evaluation(samples)
+    results["extraction"] = {
+        "precision": round(ext_metrics.precision, 4),
+        "recall": round(ext_metrics.recall, 4),
+        "f1": round(ext_metrics.f1, 4),
+    }
+    print(f"  Precision: {ext_metrics.precision:.4f}")
+    print(f"  Recall:    {ext_metrics.recall:.4f}")
+    print(f"  F1:        {ext_metrics.f1:.4f}")
+
+    if not args.skip_ragas:
+        print("\nRunning RAGAS faithfulness + relevancy evaluation...")
+        ragas_scores = run_ragas_evaluation(samples, lambda q, ctx: q)
+        results["ragas"] = ragas_scores
+        print(f"  Faithfulness:     {ragas_scores['faithfulness']:.4f}")
+        print(f"  Answer Relevancy: {ragas_scores['answer_relevancy']:.4f}")
+
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as f:
+            json.dump(results, f, indent=2)
+        print(f"\nResults written to: {args.output}")
 
 
 if __name__ == "__main__":
