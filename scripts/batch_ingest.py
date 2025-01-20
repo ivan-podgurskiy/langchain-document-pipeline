@@ -13,25 +13,40 @@ from tqdm import tqdm
 async def ingest_file(pdf_path: Path, base_url: str) -> dict:
     """Send a single PDF to the /ingest endpoint.
 
+    Corrupt or encrypted PDFs are caught and returned as failed entries
+    rather than crashing the entire batch run.
+
     Args:
         pdf_path: Path to the PDF file.
         base_url: Base URL of the running FastAPI service.
 
     Returns:
-        Dict with ingestion result (document_id, status, chunk_count, etc.).
+        Dict with ingestion result or error info.
     """
     import httpx
 
-    async with httpx.AsyncClient(base_url=base_url, timeout=120.0) as client:
-        with open(pdf_path, "rb") as f:
-            response = await client.post(
-                "/ingest/",
-                files={"file": (pdf_path.name, f, "application/pdf")},
-            )
+    try:
+        async with httpx.AsyncClient(base_url=base_url, timeout=120.0) as client:
+            with open(pdf_path, "rb") as f:
+                response = await client.post(
+                    "/ingest/",
+                    files={"file": (pdf_path.name, f, "application/pdf")},
+                )
+    except Exception as exc:
+        # Network errors, connection refused, etc.
+        return {"status": "failed", "reason": str(exc), "filename": pdf_path.name}
 
     if response.status_code == 409:
         return {"status": "skipped", "reason": "already_ingested", "filename": pdf_path.name}
-    response.raise_for_status()
+
+    if response.status_code >= 400:
+        # Server-side errors (e.g., corrupt PDF triggers 500)
+        return {
+            "status": "failed",
+            "reason": f"HTTP {response.status_code}: {response.text[:200]}",
+            "filename": pdf_path.name,
+        }
+
     return response.json()
 
 
