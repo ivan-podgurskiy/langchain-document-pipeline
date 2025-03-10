@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     # Anthropic
     anthropic_api_key: str = ""
 
-    # LLM
-    llm_model: str = "claude-2.1"
+    # LLM — upgraded to Claude 3.5 Sonnet v2 as default (available Oct 22, 2024)
+    llm_model: str = "claude-3-5-sonnet-20241022"
     llm_max_tokens: int = 4096
     llm_temperature: float = 0.0
 
