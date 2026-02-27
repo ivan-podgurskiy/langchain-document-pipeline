@@ -82,13 +82,13 @@ async def get_document_file(request: Request, document_id: str) -> Response:
             headers={
                 "Content-Type": "application/pdf",
                 "Content-Length": str(pdf_path.stat().st_size),
-                "Content-Disposition": f'attachment; filename="{filename}"',
             },
         )
     return FileResponse(
         path=pdf_path,
         media_type="application/pdf",
         filename=filename,
+        content_disposition_type="inline",
     )
 
 
