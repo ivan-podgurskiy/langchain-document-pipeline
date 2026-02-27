@@ -1,6 +1,19 @@
 version: "3.9"
 
 services:
+  app:
+    build: .
+    image: langchain-pipeline
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/documents
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
     # PG 17.0 (Sep 2024) + pgvector 0.8.0 (Oct 2024)
     # PG 17 brings improved VACUUM performance and logical replication enhancements
@@ -11,7 +24,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: documents
     ports:
-      - "5432:5432"
+      - "5433:5432"  # 5433 on host to avoid conflict with local PostgreSQL
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./src/db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql

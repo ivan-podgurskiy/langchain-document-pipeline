@@ -14,8 +14,11 @@ class Settings(BaseSettings):
     # Anthropic
     anthropic_api_key: str = ""
 
+    # Voyage AI (embeddings)
+    voyage_api_key: str = ""
+
     # LLM — upgraded to Claude 3.5 Sonnet v2 as default (available Oct 22, 2024)
-    llm_model: str = "claude-3-5-sonnet-20241022"
+    llm_model: str = "claude-sonnet-4-6"
     llm_max_tokens: int = 4096
     llm_temperature: float = 0.0
 
@@ -26,7 +29,7 @@ class Settings(BaseSettings):
     embedding_dimensions: int = 1536  # must match voyage-large-2 output dims
 
     # Vector store
-    vector_similarity_threshold: float = 0.75
+    vector_similarity_threshold: float = 0.5
     vector_top_k: int = 5
 
     # Ingestion

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from dataclasses import dataclass
 
@@ -98,7 +99,7 @@ async def similarity_search(
             content=row["content"],
             page_number=row["page_number"],
             similarity_score=float(row["similarity"]),
-            metadata=dict(row["metadata"] or {}),
+            metadata=json.loads(row["metadata"]) if isinstance(row["metadata"], str) else (row["metadata"] or {}),
         )
         for row in rows
     ]
@@ -130,5 +131,5 @@ async def get_chunk_by_id(chunk_id: uuid.UUID) -> SearchResult | None:
         content=row["content"],
         page_number=row["page_number"],
         similarity_score=1.0,
-        metadata=dict(row["metadata"] or {}),
+        metadata=json.loads(row["metadata"]) if isinstance(row["metadata"], str) else (row["metadata"] or {}),
     )

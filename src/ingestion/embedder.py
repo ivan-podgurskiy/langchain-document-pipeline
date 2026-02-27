@@ -1,33 +1,33 @@
-"""Embedding generation and storage using Voyage AI via langchain-anthropic."""
+"""Embedding generation and storage using Voyage AI."""
 
 from __future__ import annotations
 
 import uuid
 from typing import Any
 
-from langchain_anthropic import AnthropicEmbeddings
+from langchain_voyageai import VoyageAIEmbeddings
 
 from src.config import settings
 from src.db.connection import execute_command
 from src.ingestion.splitter import TextChunk
 
 
-def build_embeddings_model() -> AnthropicEmbeddings:
-    """Build the Voyage AI embeddings model through the Anthropic provider.
+def build_embeddings_model() -> VoyageAIEmbeddings:
+    """Build the Voyage AI embeddings model.
 
     Returns:
-        Configured AnthropicEmbeddings instance for voyage-large-2.
+        Configured VoyageAIEmbeddings instance for voyage-large-2.
     """
-    return AnthropicEmbeddings(
+    return VoyageAIEmbeddings(
+        voyage_api_key=settings.voyage_api_key,
         model=settings.embedding_model,
-        anthropic_api_key=settings.anthropic_api_key,
     )
 
 
 async def embed_chunks(
     chunks: list[TextChunk],
     document_id: uuid.UUID,
-    embeddings_model: AnthropicEmbeddings | None = None,
+    embeddings_model: VoyageAIEmbeddings | None = None,
 ) -> list[uuid.UUID]:
     """Generate embeddings for chunks and persist them to the database.
 
@@ -81,7 +81,7 @@ async def embed_chunks(
     return chunk_ids
 
 
-def embed_query(query: str, embeddings_model: AnthropicEmbeddings | None = None) -> list[float]:
+def embed_query(query: str, embeddings_model: VoyageAIEmbeddings | None = None) -> list[float]:
     """Generate an embedding vector for a query string.
 
     Args:
