@@ -45,10 +45,13 @@ source .venv/bin/activate   # On Windows: .venv\Scripts\activate
 pip install -e .
 python -m src.main
 
-# 4. Ingest a PDF
+# 4. Open dashboard
+open http://localhost:8000/   # or visit in browser
+
+# 5. Ingest a PDF (or use the dashboard)
 curl -F "file=@/path/to/document.pdf" http://localhost:8000/ingest/
 
-# 5. Query
+# 6. Query
 curl -X POST http://localhost:8000/query/ \
   -H "Content-Type: application/json" \
   -d '{"question": "What HCPCS codes are in this document?"}'
@@ -61,6 +64,15 @@ curl -X POST http://localhost:8000/query/ \
 python scripts/batch_ingest.py /path/to/pdfs/ --url http://localhost:8000
 ```
 
+## Dashboard
+
+A web UI is available at `http://localhost:8000/`:
+
+- **Documents** — list processed PDFs, click to view chunks and content
+- **Upload** — drag-and-drop or browse for PDFs
+- **Query** — natural language search with RAG
+- **Costs** — token usage and cost breakdown
+
 ## API Endpoints
 
 | Endpoint | Method | Description |
@@ -68,6 +80,8 @@ python scripts/batch_ingest.py /path/to/pdfs/ --url http://localhost:8000
 | /health | GET | Health check |
 | /ingest/ | POST | Upload and process PDF |
 | /ingest/{id}/status | GET | Ingestion status |
+| /documents/ | GET | List all documents |
+| /documents/{id} | GET | Document detail with chunks |
 | /query/ | POST | Semantic search + answer |
 | /costs/ | GET | Token usage and cost breakdown |
 
@@ -100,7 +114,7 @@ python scripts/evaluate.py data/eval_dataset.csv --output results.json
 
 | Layer | Technology | Version |
 |---|---|---|
-| LLM | Claude 3.5 Sonnet | `claude-3-5-sonnet-20241022` |
+| LLM | Claude Sonnet 4.6 | `claude-sonnet-4-6` |
 | Embeddings | Voyage AI | `voyage-large-2`, 1536 dims |
 | Vector Store | PostgreSQL + pgvector | PG 17.0 + pgvector 0.8.0 (HNSW) |
 | Framework | LangChain | 0.3.20 |
@@ -116,12 +130,12 @@ python scripts/evaluate.py data/eval_dataset.csv --output results.json
 |---|---|---|
 | `ANTHROPIC_API_KEY` | — | Required. Anthropic API key |
 | `DATABASE_URL` | postgresql://... | PostgreSQL connection string |
-| `LLM_MODEL` | claude-3-5-sonnet-20241022 | Claude model for QA and extraction |
+| `LLM_MODEL` | claude-sonnet-4-6 | Claude model for QA and extraction |
 | `EMBEDDING_MODEL` | voyage-large-2 | Voyage AI embedding model |
 | `CHUNK_SIZE` | 1000 | Characters per chunk |
 | `CHUNK_OVERLAP` | 200 | Chunk overlap characters |
 | `VECTOR_TOP_K` | 5 | Chunks returned per query |
-| `VECTOR_SIMILARITY_THRESHOLD` | 0.75 | Minimum cosine similarity |
+| `VECTOR_SIMILARITY_THRESHOLD` | 0.5 | Minimum cosine similarity |
 | `LANGCHAIN_TRACING_V2` | false | Enable LangSmith tracing |
 | `LANGCHAIN_API_KEY` | — | LangSmith API key |
 

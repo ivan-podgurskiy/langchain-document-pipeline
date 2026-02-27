@@ -63,6 +63,59 @@ Poll the ingestion status of a document.
 
 ---
 
+### `GET /documents/`
+
+List all ingested documents, newest first.
+
+**Response `200`:**
+```json
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "filename": "prior_auth_form.pdf",
+    "page_count": 12,
+    "chunk_count": 47,
+    "status": "done",
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+]
+```
+
+---
+
+### `GET /documents/{document_id}`
+
+Get full document details including all chunks.
+
+**Response `200`:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "filename": "prior_auth_form.pdf",
+  "file_hash": "abc123...",
+  "page_count": 12,
+  "chunk_count": 47,
+  "status": "done",
+  "error_msg": null,
+  "created_at": "2024-01-15T10:30:00Z",
+  "chunks": [
+    {
+      "id": "...",
+      "page_number": 3,
+      "chunk_index": 0,
+      "content": "Full chunk text...",
+      "content_preview": "First 200 chars..."
+    }
+  ]
+}
+```
+
+**Errors:**
+- `400`: Invalid document_id format
+- `404`: Document not found
+
+---
+
 ### `POST /query/`
 
 Search documents and generate an answer using RAG.

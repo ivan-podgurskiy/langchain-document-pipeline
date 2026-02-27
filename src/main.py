@@ -3,11 +3,18 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
+from src.api.costs import router as costs_router
+from src.api.documents import router as documents_router
+from src.api.ingest import router as ingest_router
+from src.api.query import router as query_router
 from src.config import settings
 from src.db.connection import close_pool, get_pool
 
@@ -33,6 +40,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(ingest_router)
+app.include_router(documents_router)
+app.include_router(query_router)
+app.include_router(costs_router)
+
+# Dashboard: serve static files; API routes take precedence
+_static_dir = Path(__file__).resolve().parent.parent / "static"
+if _static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(_static_dir), html=True), name="static")
+
 
 @app.on_event("startup")
 async def startup() -> None:
@@ -44,6 +61,15 @@ async def startup() -> None:
 async def shutdown() -> None:
     """Close database connection pool on application shutdown."""
     await close_pool()
+
+
+@app.get("/", include_in_schema=False, response_class=HTMLResponse)
+async def dashboard() -> str:
+    """Serve dashboard HTML."""
+    index_path = Path(__file__).resolve().parent.parent / "static" / "index.html"
+    if index_path.exists():
+        return index_path.read_text(encoding="utf-8")
+    return "<p>Dashboard not found</p>"
 
 
 @app.get("/health", tags=["system"])

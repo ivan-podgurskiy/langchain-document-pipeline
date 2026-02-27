@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml .
+COPY pyproject.toml README.md ./
+COPY src/ ./src/
 RUN pip install --upgrade pip && pip install --no-cache-dir build
 RUN pip install --no-cache-dir -e . --target /app/deps
 
@@ -19,7 +20,7 @@ RUN pip install --no-cache-dir -e . --target /app/deps
 FROM python:3.11-slim AS runtime
 
 # Security: run as non-root user
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+RUN groupadd -r appuser && useradd -r -g appuser -m appuser
 
 WORKDIR /app
 
@@ -32,9 +33,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /app/deps /app/deps
 ENV PYTHONPATH=/app/deps:/app
 
-# Copy application source
+# Copy application source and dashboard
 COPY src/ /app/src/
 COPY scripts/ /app/scripts/
+COPY static/ /app/static/
 
 # Health check against the /health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document Pipeline · Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo">
+      <span class="logo-icon">⟡</span>
+      <span class="logo-text">Doc Pipeline</span>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" data-view="documents">
+        <span class="nav-icon">📄</span>
+        Documents
+      </button>
+      <button class="nav-btn" data-view="upload">
+        <span class="nav-icon">↑</span>
+        Upload
+      </button>
+      <button class="nav-btn" data-view="query">
+        <span class="nav-icon">◉</span>
+        Query
+      </button>
+      <button class="nav-btn" data-view="costs">
+        <span class="nav-icon">$</span>
+        Costs
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/docs" target="_blank" rel="noopener" class="docs-link">API Docs</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div id="view-documents" class="view active">
+      <header class="view-header">
+        <h1>Processed Documents</h1>
+        <button id="refresh-docs" class="btn btn-ghost">↻ Refresh</button>
+      </header>
+      <div id="documents-list" class="documents-list"></div>
+      <div id="document-detail" class="document-detail hidden">
+        <button id="back-to-list" class="btn btn-ghost">← Back to list</button>
+        <div id="document-detail-content"></div>
+      </div>
+    </div>
+
+    <div id="view-upload" class="view">
+      <header class="view-header">
+        <h1>Upload PDF</h1>
+      </header>
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="file-input" accept=".pdf" hidden>
+        <div class="upload-placeholder">
+          <span class="upload-icon">📎</span>
+          <p>Drop a PDF here or <button type="button" class="btn-link" id="browse-files">browse</button></p>
+          <p class="upload-hint">Max 50 MB</p>
+        </div>
+      </div>
+      <div id="upload-result" class="upload-result hidden"></div>
+    </div>
+
+    <div id="view-query" class="view">
+      <header class="view-header">
+        <h1>RAG Query</h1>
+      </header>
+      <form id="query-form" class="query-form">
+        <textarea id="query-question" placeholder="Ask a question about your documents..." required minlength="3"></textarea>
+        <div class="query-options">
+          <label>
+            <span>Document (optional)</span>
+            <select id="query-document">
+              <option value="">All documents</option>
+            </select>
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary" id="query-submit">Search</button>
+      </form>
+      <div id="query-result" class="query-result hidden"></div>
+    </div>
+
+    <div id="view-costs" class="view">
+      <header class="view-header">
+        <h1>Cost Breakdown</h1>
+        <button id="refresh-costs" class="btn btn-ghost">↻ Refresh</button>
+      </header>
+      <div id="costs-content" class="costs-content"></div>
+    </div>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
