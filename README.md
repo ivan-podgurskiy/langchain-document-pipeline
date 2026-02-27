@@ -39,7 +39,9 @@ cp .env.example .env
 # 2. Start database (PG 17 + pgvector 0.8)
 docker compose up -d
 
-# 3. Install and run
+# 3. Create venv, install and run
+python3 -m venv .venv
+source .venv/bin/activate   # On Windows: .venv\Scripts\activate
 pip install -e .
 python -m src.main
 
