@@ -10,6 +10,8 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/documents
     env_file:
       - .env
+    volumes:
+      - document_storage:/app/data/documents
     depends_on:
       postgres:
         condition: service_healthy
@@ -36,4 +38,6 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  document_storage:
     driver: local

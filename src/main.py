@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 
@@ -17,6 +18,9 @@ from src.api.ingest import router as ingest_router
 from src.api.query import router as query_router
 from src.config import settings
 from src.db.connection import close_pool, get_pool
+
+# Ensure ingest logs are visible
+logging.getLogger("src.api.ingest").setLevel(logging.INFO)
 
 # Configure LangSmith tracing if enabled
 if settings.langchain_tracing_v2 and settings.langchain_api_key:

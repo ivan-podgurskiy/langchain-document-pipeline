@@ -66,6 +66,7 @@ dmypy.json
 # Project specific
 *.pdf
 uploads/
+data/
 logs/
 *.log
 

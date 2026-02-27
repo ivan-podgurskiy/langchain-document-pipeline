@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
+
+logger = logging.getLogger(__name__)
 from pydantic import BaseModel
 
 from src.config import settings
@@ -57,6 +61,8 @@ async def ingest_document(
         HTTPException 400: If the file is not a PDF or exceeds the size limit.
         HTTPException 409: If the document was already ingested (same file hash).
     """
+    logger.info("[ingest] Received upload: filename=%s", file.filename)
+
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are accepted")
 
@@ -68,6 +74,7 @@ async def ingest_document(
         )
 
     doc_content = load_pdf_bytes(content, file.filename)
+    logger.info("[ingest] Loaded PDF: pages=%d, hash=%s", doc_content.page_count, doc_content.file_hash[:16])
 
     # Check for duplicate
     existing = await execute_query(
@@ -75,27 +82,51 @@ async def ingest_document(
         doc_content.file_hash,
     )
     if existing:
+        logger.info("[ingest] Duplicate detected, rejecting: file_hash=%s", doc_content.file_hash[:16])
         raise HTTPException(
             status_code=409,
             detail=f"Document already ingested (id={existing[0]['id']})",
         )
 
     doc_id = uuid.uuid4()
-    await execute_command(
-        """
-        INSERT INTO documents (id, filename, file_hash, page_count, metadata)
-        VALUES ($1, $2, $3, $4, $5::jsonb)
-        """,
-        doc_id,
-        doc_content.filename,
-        doc_content.file_hash,
-        doc_content.page_count,
-        '{}',
-    )
+    logger.info("[ingest] Inserting document: id=%s", doc_id)
 
-    chunks = split_document(doc_content, settings.chunk_size, settings.chunk_overlap)
-    await embed_chunks(chunks, doc_id)
+    # Persist PDF for document viewer
+    storage_path = Path(settings.document_storage_path)
+    storage_path.mkdir(parents=True, exist_ok=True)
+    pdf_path = storage_path / f"{doc_id}.pdf"
+    pdf_path.write_bytes(content)
+    logger.info("[ingest] Stored PDF at %s", pdf_path)
 
+    try:
+        await execute_command(
+            """
+            INSERT INTO documents (id, filename, file_hash, page_count, metadata)
+            VALUES ($1, $2, $3, $4, $5::jsonb)
+            """,
+            doc_id,
+            doc_content.filename,
+            doc_content.file_hash,
+            doc_content.page_count,
+            '{}',
+        )
+
+        chunks = split_document(doc_content, settings.chunk_size, settings.chunk_overlap)
+        logger.info("[ingest] Split into %d chunks, embedding...", len(chunks))
+
+        await embed_chunks(chunks, doc_id)
+        logger.info("[ingest] Embedded and stored %d chunks", len(chunks))
+
+        update_result = await execute_command(
+            "UPDATE documents SET status = 'done' WHERE id = $1",
+            doc_id,
+        )
+        logger.info("[ingest] UPDATE status: %s for doc_id=%s", update_result, doc_id)
+    except Exception as exc:
+        logger.exception("[ingest] Failed for doc_id=%s: %s", doc_id, exc)
+        raise
+
+    logger.info("[ingest] Success, returning: doc_id=%s status=done", doc_id)
     return IngestResponse(
         document_id=str(doc_id),
         filename=doc_content.filename,

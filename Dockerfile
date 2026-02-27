@@ -24,9 +24,10 @@ RUN groupadd -r appuser && useradd -r -g appuser -m appuser
 
 WORKDIR /app
 
-# Install runtime system deps (PyMuPDF requires libmupdf)
+# Install runtime system deps (PyMuPDF requires libmupdf, gosu for entrypoint)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
+    gosu \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy installed packages from builder
@@ -38,11 +39,13 @@ COPY src/ /app/src/
 COPY scripts/ /app/scripts/
 COPY static/ /app/static/
 
+# Entrypoint fixes data dir permissions before dropping to appuser
+RUN chmod +x /app/scripts/docker-entrypoint.sh
+ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
+
 # Health check against the /health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
-
-USER appuser
 
 EXPOSE 8000
 

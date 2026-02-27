@@ -268,6 +268,65 @@ body {
   margin-top: 0.75rem;
 }
 
+/* PDF viewer */
+.pdf-viewer-section {
+  margin-bottom: 1.5rem;
+}
+
+.pdf-viewer-section h3 {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.pdf-viewer-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 500px;
+}
+
+.pdf-viewer {
+  width: 100%;
+  height: 70vh;
+  min-height: 500px;
+  border: none;
+  display: block;
+}
+
+.pdf-unavailable {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.pdf-unavailable p {
+  margin: 0.5rem 0;
+}
+
+.pdf-attach-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.attach-status {
+  font-size: 0.9rem;
+}
+
+.attach-status.success {
+  color: var(--accent);
+}
+
+.attach-status.error {
+  color: var(--error);
+}
+
 .chunks-section h3 {
   font-size: 1rem;
   margin-bottom: 0.75rem;

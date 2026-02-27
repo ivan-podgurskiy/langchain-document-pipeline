@@ -3,14 +3,19 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
+from pathlib import Path
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 
+from src.config import settings
 from src.db.connection import execute_query
 
 router = APIRouter(prefix="/documents", tags=["documents"])
+
+MAX_UPLOAD_BYTES = settings.max_upload_size_mb * 1024 * 1024
 
 
 class DocumentListItem(BaseModel):
@@ -46,6 +51,83 @@ class DocumentDetailResponse(BaseModel):
     error_msg: Optional[str]
     created_at: str
     chunks: list[ChunkItem]
+
+
+@router.api_route("/{document_id}/file", methods=["GET", "HEAD"], response_model=None)
+async def get_document_file(request: Request, document_id: str) -> Response:
+    """Serve the original PDF file for viewing. HEAD returns same headers without body."""
+    try:
+        doc_uuid = uuid.UUID(document_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid document_id format")
+
+    rows = await execute_query(
+        "SELECT id, filename FROM documents WHERE id = $1",
+        doc_uuid,
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    pdf_path = Path(settings.document_storage_path) / f"{doc_uuid}.pdf"
+    if not pdf_path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="PDF file not available (document may have been ingested before file storage was enabled)",
+        )
+
+    filename = rows[0]["filename"] or "document.pdf"
+    if request.method == "HEAD":
+        return Response(
+            status_code=200,
+            headers={
+                "Content-Type": "application/pdf",
+                "Content-Length": str(pdf_path.stat().st_size),
+                "Content-Disposition": f'attachment; filename="{filename}"',
+            },
+        )
+    return FileResponse(
+        path=pdf_path,
+        media_type="application/pdf",
+        filename=filename,
+    )
+
+
+@router.put("/{document_id}/file")
+async def attach_document_file(
+    document_id: str,
+    file: Annotated[UploadFile, File(description="PDF file to attach for preview")],
+) -> dict:
+    """Attach a PDF file to an existing document to enable preview.
+    Use this for documents ingested before file storage was enabled.
+    """
+    try:
+        doc_uuid = uuid.UUID(document_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid document_id format")
+
+    if not file.filename or not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are accepted")
+
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File exceeds maximum size of {settings.max_upload_size_mb} MB",
+        )
+
+    rows = await execute_query(
+        "SELECT id FROM documents WHERE id = $1",
+        doc_uuid,
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    storage_path = Path(settings.document_storage_path)
+    storage_path.mkdir(parents=True, exist_ok=True)
+    pdf_path = storage_path / f"{doc_uuid}.pdf"
+    pdf_path.write_bytes(content)
+
+    return {"status": "ok", "message": "PDF attached successfully"}
 
 
 @router.get("/", response_model=list[DocumentListItem])

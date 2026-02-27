@@ -19,7 +19,11 @@ $$(".nav-btn").forEach((btn) => {
     const viewId = "view-" + btn.dataset.view;
     $(`#${viewId}`).classList.add("active");
 
-    if (btn.dataset.view === "documents") loadDocuments();
+    if (btn.dataset.view === "documents") {
+      document.getElementById("document-detail")?.classList.add("hidden");
+      document.getElementById("documents-list")?.classList.remove("hidden");
+      loadDocuments();
+    }
     if (btn.dataset.view === "upload") loadDocumentsForQuery();
     if (btn.dataset.view === "query") loadDocumentsForQuery();
     if (btn.dataset.view === "costs") loadCosts();
@@ -30,13 +34,15 @@ $$(".nav-btn").forEach((btn) => {
 async function loadDocuments() {
   const list = $("#documents-list");
   const detail = $("#document-detail");
-  list.innerHTML = '<span class="loading">Loading...</span>';
+  list.classList.remove("hidden");
   detail.classList.add("hidden");
+  list.innerHTML = '<span class="loading">Loading...</span>';
 
   try {
     const res = await fetch(API_BASE + "/documents/");
     if (!res.ok) throw new Error(res.statusText);
     const docs = await res.json();
+    if (!Array.isArray(docs)) throw new Error("Invalid API response");
     if (docs.length === 0) {
       list.innerHTML = `
         <div class="empty-state">
@@ -83,6 +89,29 @@ async function showDocumentDetail(id) {
     if (!res.ok) throw new Error(res.statusText);
     const doc = await res.json();
 
+    const pdfUrl = API_BASE + "/documents/" + id + "/file";
+    const pdfAvailable = await checkPdfAvailable(pdfUrl);
+    const pdfViewerHtml = pdfAvailable
+      ? `
+      <div class="pdf-viewer-section">
+        <h3>PDF Preview</h3>
+        <div class="pdf-viewer-container">
+          <iframe src="${pdfUrl}#toolbar=1" class="pdf-viewer" title="PDF document"></iframe>
+        </div>
+      </div>`
+      : `
+      <div class="pdf-viewer-section">
+        <h3>PDF Preview</h3>
+        <div class="pdf-unavailable">
+          <p>PDF file not available. This document was likely ingested before file storage was enabled.</p>
+          <div class="pdf-attach-area">
+            <input type="file" id="attach-pdf-input" accept=".pdf" hidden>
+            <button type="button" class="btn btn-primary" id="attach-pdf-btn">Attach PDF</button>
+            <span id="attach-pdf-status" class="attach-status"></span>
+          </div>
+        </div>
+      </div>`;
+
     content.innerHTML = `
       <div class="doc-detail-header">
         <h2>${escapeHtml(doc.filename)}</h2>
@@ -94,6 +123,7 @@ async function showDocumentDetail(id) {
           <span>Ingested: ${formatDate(doc.created_at)}</span>
         </div>
       </div>
+      ${pdfViewerHtml}
       <div class="chunks-section">
         <h3>Chunks (${doc.chunks.length})</h3>
         ${doc.chunks
@@ -122,6 +152,44 @@ async function showDocumentDetail(id) {
         body.classList.toggle("hidden", expanded);
       });
     });
+
+    const attachBtn = content.querySelector("#attach-pdf-btn");
+    const attachInput = content.querySelector("#attach-pdf-input");
+    const attachStatus = content.querySelector("#attach-pdf-status");
+    if (attachBtn && attachInput && attachStatus) {
+      attachBtn.addEventListener("click", () => attachInput.click());
+      attachInput.addEventListener("change", async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        attachBtn.disabled = true;
+        attachStatus.textContent = "Uploading…";
+        attachStatus.className = "attach-status";
+        try {
+          const form = new FormData();
+          form.append("file", file);
+          const res = await fetch(API_BASE + "/documents/" + id + "/file", {
+            method: "PUT",
+            body: form,
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            attachStatus.textContent = "Attached successfully. ";
+            attachStatus.className = "attach-status success";
+            attachStatus.innerHTML += "<button type='button' class='btn-link' id='refresh-pdf'>Show preview</button>";
+            content.querySelector("#refresh-pdf")?.addEventListener("click", () => showDocumentDetail(id));
+          } else {
+            attachStatus.textContent = data.detail || res.statusText || "Failed";
+            attachStatus.className = "attach-status error";
+          }
+        } catch (err) {
+          attachStatus.textContent = err.message;
+          attachStatus.className = "attach-status error";
+        } finally {
+          attachBtn.disabled = false;
+          attachInput.value = "";
+        }
+      });
+    }
   } catch (err) {
     content.innerHTML = `<p class="error-msg">Failed to load: ${err.message}</p>`;
   }
@@ -316,6 +384,15 @@ async function loadCosts() {
 $("#refresh-costs")?.addEventListener("click", loadCosts);
 
 // Helpers
+async function checkPdfAvailable(url) {
+  try {
+    const res = await fetch(url, { method: "HEAD" });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 function escapeHtml(s) {
   if (s == null) return "";
   const div = document.createElement("div");

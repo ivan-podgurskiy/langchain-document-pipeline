@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     chunk_size: int = 1000
     chunk_overlap: int = 200
     max_upload_size_mb: int = 50
+    document_storage_path: str = "./data/documents"
 
     # LangSmith tracing
     langchain_tracing_v2: bool = False
