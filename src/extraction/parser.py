@@ -103,8 +103,7 @@ def parse_with_retry(
                 time.sleep(delay)
 
     raise ParseError(
-        f"Failed to parse LLM output after {max_retries + 1} attempts. "
-        f"Last error: {last_error}"
+        f"Failed to parse LLM output after {max_retries + 1} attempts. Last error: {last_error}"
     )
 
 

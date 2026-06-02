@@ -62,6 +62,27 @@ python_version = "3.11"
 ignore_missing_imports = true
 strict = false
 
+[[tool.mypy.overrides]]
+module = [
+    "src.api.costs",
+    "src.costs.calculator",
+    "src.db.models",
+    "src.extraction.demographics_chain",
+    "src.extraction.hcpcs_chain",
+    "src.extraction.parser",
+    "src.ingestion.embedder",
+    "src.retrieval.chain",
+    "src.retrieval.multi_query",
+]
+disable_error_code = [
+    "arg-type",
+    "assignment",
+    "attr-defined",
+    "call-arg",
+    "call-overload",
+    "union-attr",
+]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

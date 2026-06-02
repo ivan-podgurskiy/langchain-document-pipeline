@@ -6,8 +6,8 @@ import json
 import re
 from typing import Any
 
-from langchain_anthropic import ChatAnthropic
 from langchain.prompts import ChatPromptTemplate
+from langchain_anthropic import ChatAnthropic
 
 from src.config import settings
 
@@ -35,42 +35,105 @@ Return ONLY valid JSON. No prose before or after."""
 FEW_SHOT_EXAMPLES = [
     {
         "input": "Patient diagnosed with J44.1 COPD. Ordering E1390 oxygen concentrator, 2 LPM continuous flow. Also require A4216 saline solution 10mL for nebulizer.",
-        "output": json.dumps({
-            "hcpcs_codes": [
-                {"code": "E1390", "description": "Oxygen concentrator, single delivery port", "quantity": 1, "source_text": "E1390 oxygen concentrator"},
-                {"code": "A4216", "description": "Saline solution, 10ml", "quantity": None, "source_text": "A4216 saline solution 10mL"},
-            ]
-        }),
+        "output": json.dumps(
+            {
+                "hcpcs_codes": [
+                    {
+                        "code": "E1390",
+                        "description": "Oxygen concentrator, single delivery port",
+                        "quantity": 1,
+                        "source_text": "E1390 oxygen concentrator",
+                    },
+                    {
+                        "code": "A4216",
+                        "description": "Saline solution, 10ml",
+                        "quantity": None,
+                        "source_text": "A4216 saline solution 10mL",
+                    },
+                ]
+            }
+        ),
     },
     {
         "input": "Custom molded AFO brace (L1906) fitted for left foot drop secondary to CVA. Diabetic shoes A5500 and inserts A5512 also ordered.",
-        "output": json.dumps({
-            "hcpcs_codes": [
-                {"code": "L1906", "description": "AFO, posterior, custom fabricated", "quantity": 1, "source_text": "AFO brace (L1906)"},
-                {"code": "A5500", "description": "Diabetic shoe, custom molded", "quantity": 1, "source_text": "Diabetic shoes A5500"},
-                {"code": "A5512", "description": "Inserts, multiple density", "quantity": 1, "source_text": "inserts A5512"},
-            ]
-        }),
+        "output": json.dumps(
+            {
+                "hcpcs_codes": [
+                    {
+                        "code": "L1906",
+                        "description": "AFO, posterior, custom fabricated",
+                        "quantity": 1,
+                        "source_text": "AFO brace (L1906)",
+                    },
+                    {
+                        "code": "A5500",
+                        "description": "Diabetic shoe, custom molded",
+                        "quantity": 1,
+                        "source_text": "Diabetic shoes A5500",
+                    },
+                    {
+                        "code": "A5512",
+                        "description": "Inserts, multiple density",
+                        "quantity": 1,
+                        "source_text": "inserts A5512",
+                    },
+                ]
+            }
+        ),
     },
     {
         "input": "Monthly supply: A4253 blood glucose test strips (100ct), A4258 lancets (100ct), B9002 enteral nutrition pump.",
-        "output": json.dumps({
-            "hcpcs_codes": [
-                {"code": "A4253", "description": "Blood glucose test strips, per 50", "quantity": 100, "source_text": "A4253 blood glucose test strips (100ct)"},
-                {"code": "A4258", "description": "Lancets, per box of 100", "quantity": 100, "source_text": "A4258 lancets (100ct)"},
-                {"code": "B9002", "description": "Enteral nutrition infusion pump", "quantity": 1, "source_text": "B9002 enteral nutrition pump"},
-            ]
-        }),
+        "output": json.dumps(
+            {
+                "hcpcs_codes": [
+                    {
+                        "code": "A4253",
+                        "description": "Blood glucose test strips, per 50",
+                        "quantity": 100,
+                        "source_text": "A4253 blood glucose test strips (100ct)",
+                    },
+                    {
+                        "code": "A4258",
+                        "description": "Lancets, per box of 100",
+                        "quantity": 100,
+                        "source_text": "A4258 lancets (100ct)",
+                    },
+                    {
+                        "code": "B9002",
+                        "description": "Enteral nutrition infusion pump",
+                        "quantity": 1,
+                        "source_text": "B9002 enteral nutrition pump",
+                    },
+                ]
+            }
+        ),
     },
     {
         "input": "Standard power wheelchair K0823 with elevating leg rests E0990. Joystick control E2373.",
-        "output": json.dumps({
-            "hcpcs_codes": [
-                {"code": "K0823", "description": "Power wheelchair, group 2 standard", "quantity": 1, "source_text": "power wheelchair K0823"},
-                {"code": "E0990", "description": "Wheelchair accessory, elevating leg rest", "quantity": 1, "source_text": "elevating leg rests E0990"},
-                {"code": "E2373", "description": "Power wheelchair accessory, joystick", "quantity": 1, "source_text": "Joystick control E2373"},
-            ]
-        }),
+        "output": json.dumps(
+            {
+                "hcpcs_codes": [
+                    {
+                        "code": "K0823",
+                        "description": "Power wheelchair, group 2 standard",
+                        "quantity": 1,
+                        "source_text": "power wheelchair K0823",
+                    },
+                    {
+                        "code": "E0990",
+                        "description": "Wheelchair accessory, elevating leg rest",
+                        "quantity": 1,
+                        "source_text": "elevating leg rests E0990",
+                    },
+                    {
+                        "code": "E2373",
+                        "description": "Power wheelchair accessory, joystick",
+                        "quantity": 1,
+                        "source_text": "Joystick control E2373",
+                    },
+                ]
+            }
+        ),
     },
     {
         "input": "No durable medical equipment ordered at this visit. Follow-up in 4 weeks.",

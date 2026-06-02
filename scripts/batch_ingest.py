@@ -72,7 +72,6 @@ async def run_batch(
 
     semaphore = asyncio.Semaphore(concurrency)
     results = {"total": len(pdf_files), "done": 0, "skipped": 0, "failed": 0}
-    errors: list[dict] = []
 
     async def ingest_with_semaphore(path: Path) -> dict:
         async with semaphore:
@@ -97,12 +96,8 @@ def main() -> None:
         description="Batch ingest a directory of PDF files into the document pipeline"
     )
     parser.add_argument("directory", type=Path, help="Directory containing PDF files")
-    parser.add_argument(
-        "--url", default="http://localhost:8000", help="FastAPI service base URL"
-    )
-    parser.add_argument(
-        "--concurrency", type=int, default=3, help="Max simultaneous uploads"
-    )
+    parser.add_argument("--url", default="http://localhost:8000", help="FastAPI service base URL")
+    parser.add_argument("--concurrency", type=int, default=3, help="Max simultaneous uploads")
     args = parser.parse_args()
 
     if not args.directory.is_dir():
@@ -111,7 +106,7 @@ def main() -> None:
 
     results = asyncio.run(run_batch(args.directory, args.url, args.concurrency))
 
-    print(f"\nBatch ingestion complete:")
+    print("\nBatch ingestion complete:")
     print(f"  Total:   {results['total']}")
     print(f"  Done:    {results['done']}")
     print(f"  Skipped: {results['skipped']}")

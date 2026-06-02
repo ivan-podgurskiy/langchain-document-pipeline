@@ -8,7 +8,6 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from src.config import settings
 from src.retrieval.chain import QueryResult, answer_question
 
 router = APIRouter(prefix="/query", tags=["query"])

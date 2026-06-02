@@ -84,7 +84,9 @@ def run_comparison(pdf_path: Path) -> list[ChunkingStats]:
 
     for strategy_name, chunk_size, overlap in strategies:
         chunks = split_document(doc, chunk_size=chunk_size, chunk_overlap=overlap)
-        stats = compute_stats(chunks, strategy=f"{strategy_name} (size={chunk_size}, overlap={overlap})")
+        stats = compute_stats(
+            chunks, strategy=f"{strategy_name} (size={chunk_size}, overlap={overlap})"
+        )
         all_stats.append(stats)
         print(f"\n{stats.strategy}:")
         print(f"  Chunks: {stats.chunk_count}")

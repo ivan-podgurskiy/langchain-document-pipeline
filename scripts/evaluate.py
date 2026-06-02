@@ -64,12 +64,14 @@ def load_eval_dataset(csv_path: Path) -> list[EvalSample]:
         reader = csv.DictReader(f)
         for row in reader:
             codes = [c.strip() for c in row.get("hcpcs_codes", "").split("|") if c.strip()]
-            samples.append(EvalSample(
-                question=row["question"],
-                ground_truth_answer=row["ground_truth_answer"],
-                document_text=row["document_text"],
-                hcpcs_codes=codes,
-            ))
+            samples.append(
+                EvalSample(
+                    question=row["question"],
+                    ground_truth_answer=row["ground_truth_answer"],
+                    document_text=row["document_text"],
+                    hcpcs_codes=codes,
+                )
+            )
     return samples
 
 
@@ -110,12 +112,14 @@ def run_ragas_evaluation(
         answer = pipeline_answer_fn(sample.question, sample.document_text)
         answers.append(answer)
 
-    dataset = Dataset.from_dict({
-        "question": questions,
-        "answer": answers,
-        "contexts": contexts,
-        "ground_truth": ground_truths,
-    })
+    dataset = Dataset.from_dict(
+        {
+            "question": questions,
+            "answer": answers,
+            "contexts": contexts,
+            "ground_truth": ground_truths,
+        }
+    )
 
     result = evaluate(dataset, metrics=[faithfulness, answer_relevancy])
     return {

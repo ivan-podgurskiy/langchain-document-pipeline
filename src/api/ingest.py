@@ -8,8 +8,6 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
-
-logger = logging.getLogger(__name__)
 from pydantic import BaseModel
 
 from src.config import settings
@@ -17,6 +15,8 @@ from src.db.connection import execute_command, execute_query
 from src.ingestion.embedder import embed_chunks
 from src.ingestion.pdf_loader import load_pdf_bytes
 from src.ingestion.splitter import split_document
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ingest", tags=["ingestion"])
 
@@ -74,7 +74,9 @@ async def ingest_document(
         )
 
     doc_content = load_pdf_bytes(content, file.filename)
-    logger.info("[ingest] Loaded PDF: pages=%d, hash=%s", doc_content.page_count, doc_content.file_hash[:16])
+    logger.info(
+        "[ingest] Loaded PDF: pages=%d, hash=%s", doc_content.page_count, doc_content.file_hash[:16]
+    )
 
     # Check for duplicate
     existing = await execute_query(
@@ -82,7 +84,9 @@ async def ingest_document(
         doc_content.file_hash,
     )
     if existing:
-        logger.info("[ingest] Duplicate detected, rejecting: file_hash=%s", doc_content.file_hash[:16])
+        logger.info(
+            "[ingest] Duplicate detected, rejecting: file_hash=%s", doc_content.file_hash[:16]
+        )
         raise HTTPException(
             status_code=409,
             detail=f"Document already ingested (id={existing[0]['id']})",
@@ -108,7 +112,7 @@ async def ingest_document(
             doc_content.filename,
             doc_content.file_hash,
             doc_content.page_count,
-            '{}',
+            "{}",
         )
 
         chunks = split_document(doc_content, settings.chunk_size, settings.chunk_overlap)
