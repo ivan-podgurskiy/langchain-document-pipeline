@@ -48,6 +48,15 @@ class Settings(BaseSettings):
     app_port: int = 8000
     debug: bool = False
 
+    # CORS — comma-separated list of allowed origins.
+    # Defaults to local dashboard origins. Set to "*" only for trusted, credential-less deployments.
+    cors_allow_origins: str = "http://localhost:8000,http://127.0.0.1:8000"
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """Parse the comma-separated CORS origins into a list."""
+        return [o.strip() for o in self.cors_allow_origins.split(",") if o.strip()]
+
     class Config:
         env_file = ".env"
         case_sensitive = False

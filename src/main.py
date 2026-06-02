@@ -36,11 +36,16 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+# Restrict CORS to explicitly configured origins. The wildcard "*" must never be
+# combined with allow_credentials=True (browsers reject it and it is a security risk),
+# so credentials are only enabled when concrete origins are listed.
+_cors_origins = settings.cors_origins_list
+_allow_all_origins = "*" in _cors_origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=_cors_origins,
+    allow_credentials=not _allow_all_origins,
+    allow_methods=["GET", "POST", "PUT", "HEAD", "OPTIONS"],
     allow_headers=["*"],
 )
 
