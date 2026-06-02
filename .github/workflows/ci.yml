@@ -42,9 +42,26 @@ jobs:
       - name: Run mypy
         run: mypy src/ --ignore-missing-imports
 
+  test-gate:
+    name: Test gate
+    runs-on: ubuntu-latest
+    outputs:
+      has_tests: ${{ steps.detect.outputs.has_tests }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect test files
+        id: detect
+        run: |
+          if find tests -type f \( -name 'test_*.py' -o -name '*_test.py' \) | grep -q .; then
+            echo "has_tests=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_tests=false" >> "$GITHUB_OUTPUT"
+          fi
+
   test:
     name: Tests
-    if: hashFiles('tests/**') != ''
+    needs: test-gate
+    if: needs.test-gate.outputs.has_tests == 'true'
     runs-on: ubuntu-latest
     services:
       postgres:
