@@ -55,7 +55,9 @@ class TextChunk:
     document_id: str | None = None
 
 
-def build_splitter(chunk_size: int = 1000, chunk_overlap: int = 200) -> RecursiveCharacterTextSplitter:
+def build_splitter(
+    chunk_size: int = 1000, chunk_overlap: int = 200
+) -> RecursiveCharacterTextSplitter:
     """Build a healthcare-aware recursive character text splitter.
 
     Uses clinical section headers as primary split points before

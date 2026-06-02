@@ -6,12 +6,11 @@ import asyncio
 import uuid
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable
 
 from src.config import settings
-from src.db.connection import execute_command, execute_query
+from src.db.connection import execute_command
 from src.ingestion.embedder import embed_chunks
-from src.ingestion.pdf_loader import DocumentContent, load_pdf_bytes
+from src.ingestion.pdf_loader import load_pdf_bytes
 from src.ingestion.splitter import split_document
 
 

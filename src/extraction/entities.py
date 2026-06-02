@@ -6,7 +6,7 @@ import re
 from datetime import date
 from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class HCPCSCode(BaseModel):

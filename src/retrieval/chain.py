@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from typing import Any
 
-from langchain.chains import RetrievalQA
 from langchain_anthropic import ChatAnthropic
 
 from src.config import settings
@@ -109,12 +107,7 @@ async def answer_question(
         )
 
     context = format_context(chunks)
-    prompt = (
-        f"{SYSTEM_PROMPT}\n\n"
-        f"CONTEXT:\n{context}\n\n"
-        f"QUESTION: {question}\n\n"
-        f"ANSWER:"
-    )
+    prompt = f"{SYSTEM_PROMPT}\n\nCONTEXT:\n{context}\n\nQUESTION: {question}\n\nANSWER:"
 
     if llm is None:
         llm = build_qa_chain()

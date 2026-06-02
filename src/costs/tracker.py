@@ -6,7 +6,6 @@ import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
 
 
 @dataclass
@@ -22,16 +21,21 @@ class TokenUsageRecord:
     model: str
     chain_name: str
     document_id: str | None
-    input_tokens: int          # standard (non-cached) prompt tokens
-    output_tokens: int         # completion tokens
-    cache_write_tokens: int = 0   # tokens written to the prompt cache this call
-    cache_read_tokens: int = 0    # tokens served from the prompt cache this call
+    input_tokens: int  # standard (non-cached) prompt tokens
+    output_tokens: int  # completion tokens
+    cache_write_tokens: int = 0  # tokens written to the prompt cache this call
+    cache_read_tokens: int = 0  # tokens served from the prompt cache this call
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
     @property
     def total_tokens(self) -> int:
         """Total tokens for this call (all categories combined)."""
-        return self.input_tokens + self.output_tokens + self.cache_write_tokens + self.cache_read_tokens
+        return (
+            self.input_tokens
+            + self.output_tokens
+            + self.cache_write_tokens
+            + self.cache_read_tokens
+        )
 
 
 class UsageTracker:

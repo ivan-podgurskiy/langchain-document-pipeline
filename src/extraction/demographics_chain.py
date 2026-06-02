@@ -6,8 +6,8 @@ import json
 import re
 from typing import Any
 
-from langchain_anthropic import ChatAnthropic
 from langchain.prompts import ChatPromptTemplate
+from langchain_anthropic import ChatAnthropic
 
 from src.config import settings
 
@@ -45,49 +45,63 @@ DOB: 03/14/1958  MRN: 1047382
 Insurance: BlueCross BlueShield  ID: XYZ9912234
 Primary Diagnosis: J44.1 - Chronic obstructive pulmonary disease, exacerbation
 Secondary: E11.65 - Type 2 diabetes with hyperglycemia""",
-        "output": json.dumps({
-            "first_name": "Margaret",
-            "last_name": "Sullivan",
-            "date_of_birth": "1958-03-14",
-            "mrn": "1047382",
-            "insurance_id": "XYZ9912234",
-            "insurance_name": "BlueCross BlueShield",
-            "diagnoses": [
-                {"code": "J44.1", "description": "Chronic obstructive pulmonary disease, exacerbation", "primary": True},
-                {"code": "E11.65", "description": "Type 2 diabetes with hyperglycemia", "primary": False},
-            ],
-        }),
+        "output": json.dumps(
+            {
+                "first_name": "Margaret",
+                "last_name": "Sullivan",
+                "date_of_birth": "1958-03-14",
+                "mrn": "1047382",
+                "insurance_id": "XYZ9912234",
+                "insurance_name": "BlueCross BlueShield",
+                "diagnoses": [
+                    {
+                        "code": "J44.1",
+                        "description": "Chronic obstructive pulmonary disease, exacerbation",
+                        "primary": True,
+                    },
+                    {
+                        "code": "E11.65",
+                        "description": "Type 2 diabetes with hyperglycemia",
+                        "primary": False,
+                    },
+                ],
+            }
+        ),
     },
     {
         "input": """Referral for physical therapy.
 Patient: Robert Chen, born January 5 1972.
 MRN not on file. Aetna insurance, member #AE5678901.
 Diagnosis: M54.5 low back pain (primary), M51.16 disc degeneration lumbar (secondary).""",
-        "output": json.dumps({
-            "first_name": "Robert",
-            "last_name": "Chen",
-            "date_of_birth": "1972-01-05",
-            "mrn": None,
-            "insurance_id": "AE5678901",
-            "insurance_name": "Aetna",
-            "diagnoses": [
-                {"code": "M54.5", "description": "low back pain", "primary": True},
-                {"code": "M51.16", "description": "disc degeneration lumbar", "primary": False},
-            ],
-        }),
+        "output": json.dumps(
+            {
+                "first_name": "Robert",
+                "last_name": "Chen",
+                "date_of_birth": "1972-01-05",
+                "mrn": None,
+                "insurance_id": "AE5678901",
+                "insurance_name": "Aetna",
+                "diagnoses": [
+                    {"code": "M54.5", "description": "low back pain", "primary": True},
+                    {"code": "M51.16", "description": "disc degeneration lumbar", "primary": False},
+                ],
+            }
+        ),
     },
     {
         "input": """Progress note - no intake form available. Patient presents for follow-up.
 No insurance information on file. No MRN assigned yet.""",
-        "output": json.dumps({
-            "first_name": None,
-            "last_name": None,
-            "date_of_birth": None,
-            "mrn": None,
-            "insurance_id": None,
-            "insurance_name": None,
-            "diagnoses": [],
-        }),
+        "output": json.dumps(
+            {
+                "first_name": None,
+                "last_name": None,
+                "date_of_birth": None,
+                "mrn": None,
+                "insurance_id": None,
+                "insurance_name": None,
+                "diagnoses": [],
+            }
+        ),
     },
 ]
 
@@ -147,7 +161,12 @@ def extract_demographics(document_text: str, llm: ChatAnthropic | None = None) -
             except json.JSONDecodeError:
                 pass
         return {
-            "first_name": None, "last_name": None, "date_of_birth": None,
-            "mrn": None, "insurance_id": None, "insurance_name": None,
-            "diagnoses": [], "parse_error": content[:300],
+            "first_name": None,
+            "last_name": None,
+            "date_of_birth": None,
+            "mrn": None,
+            "insurance_id": None,
+            "insurance_name": None,
+            "diagnoses": [],
+            "parse_error": content[:300],
         }

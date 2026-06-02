@@ -139,6 +139,23 @@ python scripts/evaluate.py data/eval_dataset.csv --output results.json
 | `LANGCHAIN_TRACING_V2` | false | Enable LangSmith tracing |
 | `LANGCHAIN_API_KEY` | — | LangSmith API key |
 
+## Dependency Updates & Security
+
+**Renovate** is the sole tool for dependency version updates (see `renovate.json` in the
+repo root). Install the [Renovate GitHub App](https://github.com/apps/renovate) on this
+repository to enable weekly update PRs.
+
+**Dependabot alerts** (security vulnerability detection only — no version-update PRs):
+
+1. Go to **Settings → Code security and analysis**
+2. Enable **Dependabot alerts**
+3. If **Dependabot security updates** or **Dependabot version updates** are enabled, disable
+   them — Renovate handles all dependency updates; Dependabot is used here only for
+   vulnerability notifications in the GitHub UI
+
+> Previously this repo had `.github/dependabot.yml` for version updates. That file has been
+> removed in favour of Renovate.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code standards, and the PR process.

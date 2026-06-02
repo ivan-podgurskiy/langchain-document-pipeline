@@ -48,9 +48,41 @@ mypy src/
 - Prefer `async`/`await` for all I/O-bound operations
 
 ### Commits
-- Use imperative mood: "Add X", "Fix Y", "Remove Z"
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/) for
+automated releases (release-please) and dependency PR titles (Renovate). Format:
+
+```
+<type>(<optional scope>): <description>
+```
+
+Common types:
+
+| Type | When to use |
+|---|---|
+| `feat` | New user-facing feature |
+| `fix` | Bug fix |
+| `docs` | Documentation only |
+| `chore` | Maintenance, tooling, CI |
+| `deps` | Dependency updates (Renovate uses this automatically) |
+| `refactor` | Code change that neither fixes a bug nor adds a feature |
+| `test` | Adding or updating tests |
+| `ci` | CI/CD configuration changes |
+
+Examples:
+
+```
+feat: add ICD-10 extraction chain
+fix: handle empty PDF pages in loader
+deps: update langchain to 0.3.31
+chore: regenerate requirements.lock
+```
+
+Guidelines:
+
+- Use imperative mood in the description: "add X", not "added X"
 - Keep commits focused — one logical change per commit
-- Reference issues in commit messages where applicable
+- Reference issues where applicable: `fix: resolve timeout (#42)`
 
 ## Adding New Extraction Chains
 

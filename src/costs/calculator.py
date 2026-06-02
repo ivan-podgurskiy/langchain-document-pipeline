@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 # Claude pricing as of October 2024 (USD per 1M tokens)
 # Source: https://www.anthropic.com/pricing
@@ -11,8 +10,8 @@ MODEL_PRICING: dict[str, dict[str, float]] = {
     "claude-3-haiku-20240307": {
         "input": 0.25,
         "output": 1.25,
-        "cache_write": 0.30,   # 20% premium over standard input
-        "cache_read": 0.03,    # 88% discount from standard input
+        "cache_write": 0.30,  # 20% premium over standard input
+        "cache_read": 0.03,  # 88% discount from standard input
     },
     "claude-3-sonnet-20240229": {
         "input": 3.00,
