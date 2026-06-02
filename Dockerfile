@@ -1,5 +1,5 @@
 # ---- build stage ----
-FROM python:3.11-slim AS builder
+FROM python:3.14-slim AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir -e . --target /app/deps
 
 
 # ---- runtime stage ----
-FROM python:3.11-slim AS runtime
+FROM python:3.14-slim AS runtime
 
 # Security: run as non-root user
 RUN groupadd -r appuser && useradd -r -g appuser -m appuser
