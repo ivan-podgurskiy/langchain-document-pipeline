@@ -24,5 +24,7 @@ voyageai==0.3.7
 # dev dependencies
 pytest==9.0.3
 pytest-asyncio==1.4.0
+pytest-cov==6.0.0
+coverage==7.6.12
 ruff==0.9.6
 mypy==1.14.1

@@ -1,0 +1,37 @@
+queue_rules:
+  - name: default
+    merge_method: squash
+    delete_head_branch: true
+    queue_conditions:
+      - "#approved-reviews-by>=1"
+      - "-draft=true"
+      - "check-success=Lint"
+      - "check-success=Type Check"
+      - "check-success=Docker build"
+      - or:
+          - "check-success=Tests"
+          - "check-skipped=Tests"
+    merge_conditions:
+      - "#approved-reviews-by>=1"
+      - "-draft=true"
+      - "check-success=Lint"
+      - "check-success=Type Check"
+      - "check-success=Docker build"
+      - or:
+          - "check-success=Tests"
+          - "check-skipped=Tests"
+
+pull_request_rules:
+  - name: queue approved PRs
+    conditions:
+      - "#approved-reviews-by>=1"
+      - "-draft=true"
+      - "check-success=Lint"
+      - "check-success=Type Check"
+      - "check-success=Docker build"
+      - or:
+          - "check-success=Tests"
+          - "check-skipped=Tests"
+    actions:
+      queue:
+        name: default
