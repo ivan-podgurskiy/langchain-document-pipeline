@@ -105,8 +105,8 @@ Measured on 50 de-identified prior authorization and clinical note documents.
 | Avg query latency | 1.2s | Including LLM call, 10-doc corpus |
 
 ```bash
-# Run evaluation yourself
-python scripts/evaluate.py data/eval_dataset.csv --output results.json
+# Run evaluation yourself (sample de-identified data included)
+python scripts/evaluate.py data/eval_sample.csv --output results.json --skip-ragas
 ```
 
 ## Tech Stack

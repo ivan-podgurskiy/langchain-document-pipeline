@@ -1,0 +1,3 @@
+question,ground_truth_answer,document_text,hcpcs_codes
+What equipment was ordered for oxygen therapy?,An E1390 oxygen concentrator was ordered for continuous flow.,"Patient with COPD (J44.1). Ordering E1390 oxygen concentrator, 2 LPM continuous. Also A4216 saline 10mL for nebulizer.",E1390|A4216
+What mobility aid was prescribed?,A K0001 standard wheelchair was prescribed.,"Assessment: ambulation limited. Prescribe K0001 standard wheelchair, weight capacity 250 lbs.",K0001
