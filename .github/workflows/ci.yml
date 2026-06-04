@@ -85,7 +85,9 @@ jobs:
           cache: pip
           cache-dependency-path: requirements.lock
       - name: Install dependencies
-        run: pip install -r requirements.lock
+        run: |
+          pip install -r requirements.lock
+          pip install -e . --no-deps
       - name: Run pytest with coverage
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/documents_test
