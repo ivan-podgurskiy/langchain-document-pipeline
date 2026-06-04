@@ -85,9 +85,22 @@ async def dashboard() -> str:
 async def health_check() -> dict[str, str]:
     """Health check endpoint.
 
-    Returns a simple status dict to confirm the service is running.
+    Returns service status and database connectivity (degraded if DB is down).
     """
-    return {"status": "ok", "service": "langchain-document-pipeline"}
+    db_status = "ok"
+    try:
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            await conn.fetchval("SELECT 1")
+    except Exception:
+        db_status = "unavailable"
+
+    overall = "ok" if db_status == "ok" else "degraded"
+    return {
+        "status": overall,
+        "service": "langchain-document-pipeline",
+        "database": db_status,
+    }
 
 
 if __name__ == "__main__":

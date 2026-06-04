@@ -14,8 +14,9 @@ cd langchain-document-pipeline
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
-# Install in editable mode with dev dependencies
-pip install -e ".[dev]"
+# Install in editable mode with dev dependencies (Python 3.11 recommended)
+./scripts/setup_dev.sh
+source .venv/bin/activate
 
 # Copy and configure environment variables
 cp .env.example .env
