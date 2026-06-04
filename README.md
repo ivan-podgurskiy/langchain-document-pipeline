@@ -156,6 +156,10 @@ repository to enable weekly update PRs.
 > Previously this repo had `.github/dependabot.yml` for version updates. That file has been
 > removed in favour of Renovate.
 
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md) for planned work after v0.1.0.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code standards, and the PR process.
