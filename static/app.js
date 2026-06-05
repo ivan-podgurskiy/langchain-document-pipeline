@@ -320,7 +320,7 @@ $("#query-form")?.addEventListener("submit", async (e) => {
       <div class="answer-block">
         <h4>Answer</h4>
         <p>${escapeHtml(data.answer)}</p>
-        <p class="doc-detail-meta">Model: ${data.model} · Tokens: ${data.input_tokens} in / ${data.output_tokens} out</p>
+        <p class="doc-detail-meta">Model: ${data.model} · Tokens: ${data.input_tokens} in / ${data.output_tokens} out · Multi-query: ${data.multi_query ? "yes" : "no"}</p>
       </div>
       ${data.sources?.length ? `
       <div class="sources-block">

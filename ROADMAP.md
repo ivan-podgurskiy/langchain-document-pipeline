@@ -18,6 +18,7 @@ living backlog.
 - Unit tests + `data/eval_sample.csv`; pytest in CI
 - **`POST /extract/`** API and dashboard extraction panel on document detail
 - Extraction chains use `settings.llm_model`; `ExtractionResult.extraction_model` aligned
+- Multi-query retrieval wired into `POST /query/` (configurable via `MULTI_QUERY_ENABLED`)
 
 ## Next (high priority)
 
@@ -28,7 +29,6 @@ living backlog.
 
 ### Product gaps (README vs code)
 
-- [ ] Wire **multi-query retriever** into `answer_question` or update architecture docs
 - [ ] Dedicated **ICD-10 extraction chain** or narrow README to “ICD-10 via demographics chain”
 - [ ] Expand **`data/eval_sample.csv`** → full eval set; publish reproducible eval script output
 

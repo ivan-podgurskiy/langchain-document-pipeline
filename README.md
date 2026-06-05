@@ -135,6 +135,8 @@ python scripts/evaluate.py data/eval_sample.csv --output results.json --skip-rag
 | `CHUNK_SIZE` | 1000 | Characters per chunk |
 | `CHUNK_OVERLAP` | 200 | Chunk overlap characters |
 | `VECTOR_TOP_K` | 5 | Chunks returned per query |
+| `MULTI_QUERY_ENABLED` | true | Expand questions into variants before retrieval |
+| `MULTI_QUERY_VARIANTS` | 3 | Additional query variants when multi-query is on |
 | `VECTOR_SIMILARITY_THRESHOLD` | 0.5 | Minimum cosine similarity |
 | `LANGCHAIN_TRACING_V2` | false | Enable LangSmith tracing |
 | `LANGCHAIN_API_KEY` | — | LangSmith API key |

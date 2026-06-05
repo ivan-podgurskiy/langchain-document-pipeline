@@ -20,6 +20,10 @@ class QueryRequest(BaseModel):
     document_id: Optional[str] = Field(None, description="Restrict search to one document UUID")
     top_k: Optional[int] = Field(None, ge=1, le=20, description="Max chunks to retrieve")
     threshold: Optional[float] = Field(None, ge=0.0, le=1.0, description="Minimum similarity score")
+    use_multi_query: Optional[bool] = Field(
+        None,
+        description="Use multi-query retrieval (defaults to MULTI_QUERY_ENABLED setting)",
+    )
 
 
 class SourceChunkResponse(BaseModel):
@@ -41,14 +45,16 @@ class QueryResponse(BaseModel):
     model: str
     input_tokens: int
     output_tokens: int
+    multi_query: bool
 
 
 @router.post("/", response_model=QueryResponse)
 async def query_documents(request: QueryRequest) -> QueryResponse:
     """Search documents and generate a grounded answer using RAG.
 
-    Retrieves the most relevant chunks via HNSW similarity search,
-    then asks Claude to produce an answer grounded in those chunks.
+    Retrieves the most relevant chunks via HNSW similarity search (with optional
+    multi-query expansion), then asks Claude to produce an answer grounded in
+    those chunks.
 
     Args:
         request: QueryRequest containing the question and optional filters.
@@ -71,6 +77,7 @@ async def query_documents(request: QueryRequest) -> QueryResponse:
         document_id=doc_uuid,
         top_k=request.top_k,
         threshold=request.threshold,
+        use_multi_query=request.use_multi_query,
     )
 
     return QueryResponse(
@@ -89,4 +96,5 @@ async def query_documents(request: QueryRequest) -> QueryResponse:
         model=result.model,
         input_tokens=result.tokens_used.get("input_tokens", 0),
         output_tokens=result.tokens_used.get("output_tokens", 0),
+        multi_query=result.multi_query,
     )
