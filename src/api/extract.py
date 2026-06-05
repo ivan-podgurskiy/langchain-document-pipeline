@@ -18,12 +18,16 @@ from src.extraction.service import (
 router = APIRouter(prefix="/extract", tags=["extraction"])
 
 
+def _default_extract_chains() -> list[ExtractionChainName]:
+    return ["hcpcs", "demographics"]
+
+
 class ExtractRequest(BaseModel):
     """Request body for the /extract endpoint."""
 
     document_id: str = Field(..., description="UUID of an ingested document")
     chains: list[ExtractionChainName] = Field(
-        default_factory=lambda: ["hcpcs", "demographics"],
+        default_factory=_default_extract_chains,
         min_length=1,
         description="Extraction chains to run: hcpcs, demographics",
     )

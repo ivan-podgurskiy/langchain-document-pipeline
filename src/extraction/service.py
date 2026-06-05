@@ -5,7 +5,8 @@ from __future__ import annotations
 import asyncio
 import uuid
 from collections import defaultdict
-from typing import Literal
+from collections.abc import Sequence
+from typing import Any, Literal
 
 from pydantic import ValidationError
 
@@ -28,7 +29,7 @@ class DocumentNotReadyError(Exception):
         super().__init__(f"Document is not ready for extraction (status={status})")
 
 
-def pages_from_chunks(chunk_rows: list[object]) -> list[str]:
+def pages_from_chunks(chunk_rows: Sequence[Any]) -> list[str]:
     """Group chunk rows by page number and join chunk text per page."""
     by_page: dict[int, list[str]] = defaultdict(list)
     for row in chunk_rows:
@@ -83,7 +84,10 @@ async def load_document_for_extraction(
 def _parse_hcpcs_codes(raw: dict[str, object], warnings: list[str]) -> list[HCPCSCode]:
     """Validate HCPCS entries from LLM output, skipping invalid rows."""
     codes: list[HCPCSCode] = []
-    for entry in raw.get("hcpcs_codes", []) or []:
+    entries = raw.get("hcpcs_codes")
+    if not isinstance(entries, list):
+        entries = []
+    for entry in entries:
         if not isinstance(entry, dict):
             continue
         try:
