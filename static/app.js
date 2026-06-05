@@ -124,6 +124,12 @@ async function showDocumentDetail(id) {
         </div>
       </div>
       ${pdfViewerHtml}
+      <div class="extract-section">
+        <h3>Structured extraction</h3>
+        <p class="extract-hint">Run HCPCS and demographics chains on this document's text.</p>
+        <button type="button" class="btn btn-primary" id="run-extract-btn">Run extraction</button>
+        <div id="extract-result" class="extract-result hidden"></div>
+      </div>
       <div class="chunks-section">
         <h3>Chunks (${doc.chunks.length})</h3>
         ${doc.chunks
@@ -189,6 +195,12 @@ async function showDocumentDetail(id) {
           attachInput.value = "";
         }
       });
+    }
+
+    const extractBtn = content.querySelector("#run-extract-btn");
+    const extractResult = content.querySelector("#extract-result");
+    if (extractBtn && extractResult) {
+      extractBtn.addEventListener("click", () => runExtraction(id, extractBtn, extractResult));
     }
   } catch (err) {
     content.innerHTML = `<p class="error-msg">Failed to load: ${err.message}</p>`;
@@ -382,6 +394,81 @@ async function loadCosts() {
 }
 
 $("#refresh-costs")?.addEventListener("click", loadCosts);
+
+async function runExtraction(documentId, button, resultEl) {
+  button.disabled = true;
+  resultEl.classList.remove("hidden");
+  resultEl.innerHTML = '<span class="loading">Extracting...</span>';
+
+  try {
+    const res = await fetch(API_BASE + "/extract/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ document_id: documentId, chains: ["hcpcs", "demographics"] }),
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      const detail = typeof data.detail === "string" ? data.detail : res.statusText;
+      resultEl.innerHTML = `<p class="error-msg">${escapeHtml(detail)}</p>`;
+      return;
+    }
+
+    const hcpcsHtml =
+      data.hcpcs_codes?.length > 0
+        ? `<ul class="extract-list">${data.hcpcs_codes
+            .map(
+              (c) =>
+                `<li><code>${escapeHtml(c.code)}</code> — ${escapeHtml(c.description)}${
+                  c.quantity != null ? ` · qty ${c.quantity}` : ""
+                }</li>`
+            )
+            .join("")}</ul>`
+        : "<p>No HCPCS codes found.</p>";
+
+    const patient = data.patient;
+    const patientHtml = patient
+      ? `<p><strong>${escapeHtml(patient.first_name)} ${escapeHtml(patient.last_name)}</strong></p>
+         <p class="doc-detail-meta">DOB: ${escapeHtml(patient.date_of_birth || "—")} · MRN: ${escapeHtml(
+           patient.mrn || "—"
+         )}</p>
+         ${
+           patient.diagnoses?.length
+             ? `<ul class="extract-list">${patient.diagnoses
+                 .map(
+                   (d) =>
+                     `<li><code>${escapeHtml(d.code)}</code> — ${escapeHtml(d.description)}${
+                       d.primary ? " (primary)" : ""
+                     }</li>`
+                 )
+                 .join("")}</ul>`
+             : ""
+         }`
+      : "<p>No patient demographics extracted.</p>";
+
+    const warningsHtml =
+      data.warnings?.length > 0
+        ? `<p class="extract-warnings">${data.warnings.map((w) => escapeHtml(w)).join("<br>")}</p>`
+        : "";
+
+    resultEl.innerHTML = `
+      <div class="extract-block">
+        <h4>HCPCS codes (${data.hcpcs_codes?.length || 0})</h4>
+        ${hcpcsHtml}
+      </div>
+      <div class="extract-block">
+        <h4>Patient demographics</h4>
+        ${patientHtml}
+      </div>
+      <p class="doc-detail-meta">Model: ${escapeHtml(data.model)} · Tokens: ${data.input_tokens} in / ${data.output_tokens} out</p>
+      ${warningsHtml}
+    `;
+  } catch (err) {
+    resultEl.innerHTML = `<p class="error-msg">${escapeHtml(err.message)}</p>`;
+  } finally {
+    button.disabled = false;
+  }
+}
 
 // Helpers
 async function checkPdfAvailable(url) {

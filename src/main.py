@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from src.api.costs import router as costs_router
 from src.api.documents import router as documents_router
+from src.api.extract import router as extract_router
 from src.api.ingest import router as ingest_router
 from src.api.query import router as query_router
 from src.config import settings
@@ -52,6 +53,7 @@ app.add_middleware(
 app.include_router(ingest_router)
 app.include_router(documents_router)
 app.include_router(query_router)
+app.include_router(extract_router)
 app.include_router(costs_router)
 
 # Dashboard: serve static files; API routes take precedence

@@ -117,14 +117,19 @@ def build_demographics_chain() -> ChatAnthropic:
         ChatAnthropic configured with zero temperature for deterministic output.
     """
     return ChatAnthropic(
-        model="claude-3-sonnet-20240229",
-        temperature=0.0,
-        max_tokens=1024,
+        model=settings.llm_model,
+        temperature=settings.llm_temperature,
+        max_tokens=settings.llm_max_tokens,
         anthropic_api_key=settings.anthropic_api_key,
     )
 
 
-def extract_demographics(document_text: str, llm: ChatAnthropic | None = None) -> dict[str, Any]:
+def extract_demographics(
+    document_text: str,
+    llm: ChatAnthropic | None = None,
+    *,
+    return_usage: bool = False,
+) -> dict[str, Any] | tuple[dict[str, Any], dict[str, int]]:
     """Extract patient demographics from a medical document.
 
     Uses Claude 3 Sonnet with few-shot examples to parse patient name,
@@ -150,23 +155,41 @@ def extract_demographics(document_text: str, llm: ChatAnthropic | None = None) -
     chain = prompt | llm
     response = chain.invoke({"document_text": document_text})
     content = str(response.content).strip()
+    usage = getattr(response, "usage_metadata", {}) or {}
 
     try:
-        return json.loads(content)
+        parsed = json.loads(content)
     except json.JSONDecodeError:
         match = re.search(r"\{.*\}", content, re.DOTALL)
         if match:
             try:
-                return json.loads(match.group(0))
+                parsed = json.loads(match.group(0))
             except json.JSONDecodeError:
-                pass
-        return {
-            "first_name": None,
-            "last_name": None,
-            "date_of_birth": None,
-            "mrn": None,
-            "insurance_id": None,
-            "insurance_name": None,
-            "diagnoses": [],
-            "parse_error": content[:300],
+                parsed = {
+                    "first_name": None,
+                    "last_name": None,
+                    "date_of_birth": None,
+                    "mrn": None,
+                    "insurance_id": None,
+                    "insurance_name": None,
+                    "diagnoses": [],
+                    "parse_error": content[:300],
+                }
+        else:
+            parsed = {
+                "first_name": None,
+                "last_name": None,
+                "date_of_birth": None,
+                "mrn": None,
+                "insurance_id": None,
+                "insurance_name": None,
+                "diagnoses": [],
+                "parse_error": content[:300],
+            }
+
+    if return_usage:
+        return parsed, {
+            "input_tokens": int(usage.get("input_tokens", 0)),
+            "output_tokens": int(usage.get("output_tokens", 0)),
         }
+    return parsed

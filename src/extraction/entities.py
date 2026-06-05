@@ -8,6 +8,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from src.config import settings
+
 
 class HCPCSCode(BaseModel):
     """A single HCPCS Level II procedure/equipment code."""
@@ -73,7 +75,7 @@ class ExtractionResult(BaseModel):
     hcpcs_codes: list[HCPCSCode] = Field(default_factory=list)
     patient: Optional[PatientDemographics] = None
     diagnoses: list[DiagnosisEntry] = Field(default_factory=list)
-    extraction_model: str = Field("claude-3-sonnet-20240229")
+    extraction_model: str = Field(default_factory=lambda: settings.llm_model)
     input_tokens: int = Field(0)
     output_tokens: int = Field(0)
 

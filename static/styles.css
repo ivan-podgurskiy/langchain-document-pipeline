@@ -537,6 +537,38 @@ body {
   font-size: 1.1rem;
 }
 
+.extract-section {
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.extract-hint {
+  color: var(--text-muted);
+  margin: 0.5rem 0 1rem;
+}
+
+.extract-result {
+  margin-top: 1rem;
+}
+
+.extract-block + .extract-block {
+  margin-top: 1rem;
+}
+
+.extract-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.extract-warnings {
+  margin-top: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
 .loading {
   color: var(--text-muted);
 }

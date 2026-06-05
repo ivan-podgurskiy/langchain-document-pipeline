@@ -12,24 +12,22 @@ living backlog.
 - Cost tracking API and dashboard (documents, upload, query, costs)
 - CI: ruff, mypy, Docker build; release-please
 
-## Now (open PRs / in progress)
+## Shipped (v0.1.1+)
 
-| Item | Branch / PR | Notes |
-|------|-------------|--------|
-| Python 3.11 dev setup + DB health check | `fix/local-dev-python311` | `setup_dev.sh`, `.python-version`, `/health` probes Postgres |
-| Unit tests + sample eval CSV | `feat/tests-and-eval-sample` | CI pytest; `data/eval_sample.csv` |
+- Python 3.11 dev setup (`setup_dev.sh`, `.python-version`) and DB-aware `/health`
+- Unit tests + `data/eval_sample.csv`; pytest in CI
+- **`POST /extract/`** API and dashboard extraction panel on document detail
+- Extraction chains use `settings.llm_model`; `ExtractionResult.extraction_model` aligned
 
 ## Next (high priority)
 
 ### Quality & DX
 
-- [ ] Merge test PR and keep coverage trending up (integration tests with real Postgres in CI)
-- [ ] Align `ExtractionResult.extraction_model` default with `settings.llm_model`
+- [ ] Integration tests with real Postgres in CI (extend beyond mocked API tests)
 - [ ] Reduce mypy `disable_error_code` overrides module-by-module
 
 ### Product gaps (README vs code)
 
-- [ ] **`POST /extract`** (or run-on-ingest) for HCPCS / demographics — chains exist but are not exposed via API or UI
 - [ ] Wire **multi-query retriever** into `answer_question` or update architecture docs
 - [ ] Dedicated **ICD-10 extraction chain** or narrow README to “ICD-10 via demographics chain”
 - [ ] Expand **`data/eval_sample.csv`** → full eval set; publish reproducible eval script output
@@ -37,7 +35,6 @@ living backlog.
 ### Dashboard
 
 - [ ] Ingest status polling in UI
-- [ ] Extraction results view per document
 - [ ] Markdown rendering for RAG answers; optional streaming
 - [ ] Responsive layout / basic a11y (focus, labels)
 
@@ -57,5 +54,5 @@ living backlog.
 
 ## How to contribute
 
-Pick an unchecked item, open an issue or comment on the roadmap PR, and follow
+Pick an unchecked item, open an issue or comment on the roadmap, and follow
 [CONTRIBUTING.md](CONTRIBUTING.md). Prefer small, reviewable PRs aligned with one roadmap row.
