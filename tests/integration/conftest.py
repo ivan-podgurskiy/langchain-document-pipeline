@@ -83,6 +83,6 @@ async def integration_client(db_session: None) -> AsyncIterator[AsyncClient]:
     """HTTP client with FastAPI lifespan against a live PostgreSQL database."""
     from src.main import app
 
-    transport = ASGITransport(app=app, lifespan="on")
+    transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
