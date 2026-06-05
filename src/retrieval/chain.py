@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from langchain_anthropic import ChatAnthropic
 
 from src.config import settings
+from src.costs.tracker import tracker
+from src.retrieval.multi_query import multi_query_search
 from src.retrieval.vector_store import SearchResult, similarity_search
 
 
@@ -20,6 +22,7 @@ class QueryResult:
     source_chunks: list[SearchResult]
     model: str
     tokens_used: dict[str, int]
+    multi_query: bool = False
 
 
 def build_qa_chain(
@@ -68,17 +71,46 @@ def format_context(chunks: list[SearchResult]) -> str:
     return "\n\n---\n\n".join(parts)
 
 
+async def _retrieve_chunks(
+    question: str,
+    document_id: uuid.UUID | None,
+    top_k: int | None,
+    threshold: float | None,
+    use_multi_query: bool,
+) -> tuple[list[SearchResult], dict[str, int]]:
+    """Retrieve context chunks using single-query or multi-query search."""
+    if use_multi_query:
+        chunks, usage = await multi_query_search(
+            question=question,
+            num_variants=settings.multi_query_variants,
+            top_k=top_k,
+            threshold=threshold,
+            document_id=document_id,
+        )
+        return chunks, usage
+
+    chunks = await similarity_search(
+        query=question,
+        top_k=top_k,
+        threshold=threshold,
+        document_id=document_id,
+    )
+    return chunks, {"input_tokens": 0, "output_tokens": 0}
+
+
 async def answer_question(
     question: str,
     document_id: uuid.UUID | None = None,
     top_k: int | None = None,
     threshold: float | None = None,
     llm: ChatAnthropic | None = None,
+    use_multi_query: bool | None = None,
 ) -> QueryResult:
     """Answer a question using retrieval-augmented generation.
 
-    Retrieves relevant chunks from the vector store, formats them as context,
-    and uses Claude to generate a grounded answer.
+    Retrieves relevant chunks from the vector store (optionally via multi-query
+    expansion for improved recall), formats them as context, and uses Claude to
+    generate a grounded answer.
 
     Args:
         question: Natural language question to answer.
@@ -86,15 +118,18 @@ async def answer_question(
         top_k: Maximum chunks to retrieve. Defaults to settings value.
         threshold: Minimum similarity score. Defaults to settings value.
         llm: Optional pre-built LLM; created fresh if None.
+        use_multi_query: Override settings.multi_query_enabled when set.
 
     Returns:
         QueryResult with answer, source chunks, and token usage.
     """
-    chunks = await similarity_search(
-        query=question,
+    multi_query = use_multi_query if use_multi_query is not None else settings.multi_query_enabled
+    chunks, retrieval_tokens = await _retrieve_chunks(
+        question=question,
+        document_id=document_id,
         top_k=top_k,
         threshold=threshold,
-        document_id=document_id,
+        use_multi_query=multi_query,
     )
 
     if not chunks:
@@ -104,6 +139,7 @@ async def answer_question(
             source_chunks=[],
             model=settings.llm_model,
             tokens_used={"input_tokens": 0, "output_tokens": 0},
+            multi_query=multi_query,
         )
 
     context = format_context(chunks)
@@ -115,6 +151,16 @@ async def answer_question(
     response = llm.invoke(prompt)
     answer = response.content
     usage = getattr(response, "usage_metadata", {}) or {}
+    qa_input = int(usage.get("input_tokens", 0))
+    qa_output = int(usage.get("output_tokens", 0))
+
+    tracker.record(
+        model=settings.llm_model,
+        chain_name="qa_chain",
+        input_tokens=qa_input,
+        output_tokens=qa_output,
+        document_id=str(document_id) if document_id else None,
+    )
 
     return QueryResult(
         question=question,
@@ -122,7 +168,8 @@ async def answer_question(
         source_chunks=chunks,
         model=settings.llm_model,
         tokens_used={
-            "input_tokens": usage.get("input_tokens", 0),
-            "output_tokens": usage.get("output_tokens", 0),
+            "input_tokens": retrieval_tokens["input_tokens"] + qa_input,
+            "output_tokens": retrieval_tokens["output_tokens"] + qa_output,
         },
+        multi_query=multi_query,
     )

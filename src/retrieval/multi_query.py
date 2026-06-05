@@ -7,6 +7,7 @@ import uuid
 from langchain_anthropic import ChatAnthropic
 
 from src.config import settings
+from src.costs.tracker import tracker
 from src.retrieval.vector_store import SearchResult, similarity_search
 
 QUERY_EXPANSION_PROMPT = """You are a medical document search expert. Given a user question,
@@ -44,7 +45,9 @@ def expand_query(
     question: str,
     num_variants: int = 3,
     llm: ChatAnthropic | None = None,
-) -> list[str]:
+    *,
+    return_usage: bool = False,
+) -> list[str] | tuple[list[str], dict[str, int]]:
     """Generate multiple query variants from a single question.
 
     Args:
@@ -64,10 +67,17 @@ def expand_query(
     )
 
     response = llm.invoke(prompt)
-    raw = response.content.strip()
+    raw = str(response.content).strip()
+    usage = getattr(response, "usage_metadata", {}) or {}
     variants = [line.strip() for line in raw.splitlines() if line.strip()]
     # Include the original to guarantee at least one meaningful query
     all_queries = [question] + variants[:num_variants]
+
+    if return_usage:
+        return all_queries, {
+            "input_tokens": int(usage.get("input_tokens", 0)),
+            "output_tokens": int(usage.get("output_tokens", 0)),
+        }
     return all_queries
 
 
@@ -98,12 +108,12 @@ def deduplicate_results(results_lists: list[list[SearchResult]]) -> list[SearchR
 
 async def multi_query_search(
     question: str,
-    num_variants: int = 3,
+    num_variants: int | None = None,
     top_k: int | None = None,
     threshold: float | None = None,
     document_id: uuid.UUID | None = None,
     llm: ChatAnthropic | None = None,
-) -> list[SearchResult]:
+) -> tuple[list[SearchResult], dict[str, int]]:
     """Retrieve chunks using multiple query variants for improved recall.
 
     Expands the original question into several variants, runs similarity
@@ -118,18 +128,32 @@ async def multi_query_search(
         llm: Optional pre-built LLM for query expansion.
 
     Returns:
-        Deduplicated SearchResult list ranked by similarity.
+        Deduplicated SearchResult list ranked by similarity, capped at top_k.
     """
-    queries = expand_query(question, num_variants, llm)
+    variant_count = num_variants if num_variants is not None else settings.multi_query_variants
+    expander = llm or build_query_expander()
+    expanded = expand_query(question, variant_count, expander, return_usage=True)
+    assert isinstance(expanded, tuple)
+    queries, usage = expanded
 
+    tracker.record(
+        model=settings.llm_model,
+        chain_name="query_expansion",
+        input_tokens=int(usage.get("input_tokens", 0)),
+        output_tokens=int(usage.get("output_tokens", 0)),
+        document_id=str(document_id) if document_id else None,
+    )
+
+    per_query_k = top_k or settings.vector_top_k
     results_lists = []
     for q in queries:
         results = await similarity_search(
             query=q,
-            top_k=top_k,
+            top_k=per_query_k,
             threshold=threshold,
             document_id=document_id,
         )
         results_lists.append(results)
 
-    return deduplicate_results(results_lists)
+    merged = deduplicate_results(results_lists)
+    return merged[:per_query_k], usage

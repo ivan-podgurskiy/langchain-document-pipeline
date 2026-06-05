@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     # Vector store
     vector_similarity_threshold: float = 0.5
     vector_top_k: int = 5
+    multi_query_enabled: bool = True
+    multi_query_variants: int = 3
 
     # Ingestion
     chunk_size: int = 1000

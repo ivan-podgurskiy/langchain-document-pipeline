@@ -182,11 +182,13 @@ Search documents and generate an answer using RAG.
   "question": "What HCPCS codes are ordered for this patient?",
   "document_id": "550e8400-e29b-41d4-a716-446655440000",
   "top_k": 5,
-  "threshold": 0.75
+  "threshold": 0.75,
+  "use_multi_query": true
 }
 ```
 
-All fields except `question` are optional.
+All fields except `question` are optional. `use_multi_query` defaults to the
+`MULTI_QUERY_ENABLED` environment setting (enabled by default).
 
 **Response `200`:**
 ```json
@@ -204,7 +206,8 @@ All fields except `question` are optional.
   ],
   "model": "claude-3-5-sonnet-20241022",
   "input_tokens": 1247,
-  "output_tokens": 89
+  "output_tokens": 89,
+  "multi_query": true
 }
 ```
 
