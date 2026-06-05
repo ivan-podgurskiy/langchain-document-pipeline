@@ -153,9 +153,9 @@ def build_hcpcs_chain() -> ChatAnthropic:
         ChatAnthropic configured for deterministic structured extraction.
     """
     return ChatAnthropic(
-        model="claude-3-sonnet-20240229",
-        temperature=0.0,
-        max_tokens=2048,
+        model=settings.llm_model,
+        temperature=settings.llm_temperature,
+        max_tokens=settings.llm_max_tokens,
         anthropic_api_key=settings.anthropic_api_key,
     )
 
@@ -194,7 +194,9 @@ def concat_pages(pages: list[str]) -> str:
 def extract_hcpcs_codes(
     document_text: str | list[str],
     llm: ChatAnthropic | None = None,
-) -> dict[str, Any]:
+    *,
+    return_usage: bool = False,
+) -> dict[str, Any] | tuple[dict[str, Any], dict[str, int]]:
     """Extract HCPCS codes from clinical documentation with few-shot prompting.
 
     Accepts either a single text string or a list of per-page strings.
@@ -223,14 +225,23 @@ def extract_hcpcs_codes(
     chain = prompt | llm
     response = chain.invoke({"document_text": document_text})
     content = str(response.content).strip()
+    usage = getattr(response, "usage_metadata", {}) or {}
 
     try:
-        return json.loads(content)
+        parsed = json.loads(content)
     except json.JSONDecodeError:
         match = re.search(r"\{.*\}", content, re.DOTALL)
         if match:
             try:
-                return json.loads(match.group(0))
+                parsed = json.loads(match.group(0))
             except json.JSONDecodeError:
-                pass
-        return {"hcpcs_codes": [], "parse_error": content[:500]}
+                parsed = {"hcpcs_codes": [], "parse_error": content[:500]}
+        else:
+            parsed = {"hcpcs_codes": [], "parse_error": content[:500]}
+
+    if return_usage:
+        return parsed, {
+            "input_tokens": int(usage.get("input_tokens", 0)),
+            "output_tokens": int(usage.get("output_tokens", 0)),
+        }
+    return parsed

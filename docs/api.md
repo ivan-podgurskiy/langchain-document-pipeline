@@ -116,6 +116,62 @@ Get full document details including all chunks.
 
 ---
 
+### `POST /extract/`
+
+Run structured extraction (HCPCS codes and/or patient demographics) on an ingested document.
+
+**Request body:**
+```json
+{
+  "document_id": "550e8400-e29b-41d4-a716-446655440000",
+  "chains": ["hcpcs", "demographics"]
+}
+```
+
+`chains` defaults to both extractors. Use `"hcpcs"` or `"demographics"` alone to run a subset.
+
+**Response `200`:**
+```json
+{
+  "document_id": "550e8400-e29b-41d4-a716-446655440000",
+  "hcpcs_codes": [
+    {
+      "code": "E1390",
+      "description": "Oxygen concentrator, single delivery port",
+      "quantity": 1,
+      "source_text": "E1390 oxygen concentrator"
+    }
+  ],
+  "patient": {
+    "first_name": "Margaret",
+    "last_name": "Sullivan",
+    "date_of_birth": "1958-03-14",
+    "mrn": "1047382",
+    "insurance_id": "XYZ9912234",
+    "insurance_name": "BlueCross BlueShield",
+    "diagnoses": [
+      {
+        "code": "J44.1",
+        "description": "Chronic obstructive pulmonary disease, exacerbation",
+        "primary": true
+      }
+    ]
+  },
+  "model": "claude-sonnet-4-6",
+  "input_tokens": 2840,
+  "output_tokens": 312,
+  "warnings": []
+}
+```
+
+**Errors:**
+- `400`: Invalid document_id, or `ANTHROPIC_API_KEY` not configured
+- `404`: Document not found
+- `409`: Document ingestion not complete (`status` is not `done`)
+- `422`: Document has no text chunks
+
+---
+
 ### `POST /query/`
 
 Search documents and generate an answer using RAG.

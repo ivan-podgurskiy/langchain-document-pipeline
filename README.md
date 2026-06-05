@@ -82,6 +82,7 @@ A web UI is available at `http://localhost:8000/`:
 | /documents/ | GET | List all documents |
 | /documents/{id} | GET | Document detail with chunks |
 | /query/ | POST | Semantic search + answer |
+| /extract/ | POST | HCPCS / demographics extraction |
 | /costs/ | GET | Token usage and cost breakdown |
 
 See [docs/api.md](docs/api.md) for full API reference.
