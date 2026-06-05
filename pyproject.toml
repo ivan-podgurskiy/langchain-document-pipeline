@@ -88,6 +88,9 @@ disable_error_code = [
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "integration: tests requiring live PostgreSQL (DATABASE_URL)",
+]
 
 [tool.coverage.run]
 source = ["src"]

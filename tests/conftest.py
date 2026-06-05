@@ -8,8 +8,10 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def mock_db_pool(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Avoid requiring a live PostgreSQL instance for API tests."""
+def mock_db_pool(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Avoid requiring a live PostgreSQL instance for unit/API smoke tests."""
+    if request.node.get_closest_marker("integration") is not None:
+        return
     mock_conn = AsyncMock()
     mock_conn.fetchval = AsyncMock(return_value=1)
 

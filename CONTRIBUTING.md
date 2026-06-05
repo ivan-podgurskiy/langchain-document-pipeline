@@ -25,8 +25,13 @@ cp .env.example .env
 # Start the database
 docker compose up -d
 
-# Run tests
+# Run tests (unit tests use a mocked DB; integration tests are skipped unless DATABASE_URL is set)
 pytest tests/ -v
+
+# Run integration tests against docker compose Postgres
+docker compose up -d
+psql "$DATABASE_URL" -f src/db/schema.sql
+RUN_INTEGRATION_TESTS=1 pytest tests/integration/ -v
 ```
 
 ## Code Standards

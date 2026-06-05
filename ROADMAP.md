@@ -19,12 +19,12 @@ living backlog.
 - **`POST /extract/`** API and dashboard extraction panel on document detail
 - Extraction chains use `settings.llm_model`; `ExtractionResult.extraction_model` aligned
 - Multi-query retrieval wired into `POST /query/` (configurable via `MULTI_QUERY_ENABLED`)
+- Integration tests with live PostgreSQL in CI (`tests/integration/`)
 
 ## Next (high priority)
 
 ### Quality & DX
 
-- [ ] Integration tests with real Postgres in CI (extend beyond mocked API tests)
 - [ ] Reduce mypy `disable_error_code` overrides module-by-module
 
 ### Product gaps (README vs code)

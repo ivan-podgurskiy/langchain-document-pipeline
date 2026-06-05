@@ -88,10 +88,17 @@ jobs:
         run: |
           pip install -r requirements.lock
           pip install -e . --no-deps
+      - name: Install psql client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Apply database schema
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d documents_test -f src/db/schema.sql
       - name: Run pytest with coverage
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/documents_test
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RUN_INTEGRATION_TESTS: "1"
         run: pytest tests/ -v --tb=short --cov=src --cov-report=xml
       - name: Upload coverage to Codecov
         if: always()
